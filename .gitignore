@@ -1,0 +1,22 @@
+# Ignore large raw database dump (exceeds GitHub 100MB limit)
+world_full_05_october_2019.sql
+
+# Compressed archives (add specific ones if needed)
+world_full_05_october_2019.7z
+
+# SQLite journal/WAL files (can be regenerated)
+*.sqlite-shm
+*.sqlite-wal
+
+# Build output
+build/
+
+# macOS metadata
+.DS_Store
+
+# Xcode user data & derived data
+**/xcuserdata/
+DerivedData/
+
+# SwiftPM local data
+.build/
