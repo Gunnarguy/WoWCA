@@ -1,0 +1,45 @@
+# Extracted Spell Data from Classic WoW Database
+
+## Spell 18041 (Increase Healing 66) - Classic build 5875
+```
+entry: 18041
+build: 5875
+effect1: 6 (Apply Aura)
+effectBasePoints1: 65 (so +66 healing)
+effectApplyAuraName1: 135 (MOD_HEALING_DONE)
+name1: 'Increase Healing 66'
+description1: 'Increases healing done by spells and effects by up to $s1.'
+```
+
+## Spell 21365 (Increased Mana Regen) - Classic build 5875
+```
+entry: 21365
+build: 5875
+effect1: 6 (Apply Aura)
+effectBasePoints1: 8 (so +9 MP5, because base+1)
+effectApplyAuraName1: 85 (MOD_MANA_REGEN)
+name1: 'Increased Mana Regen'
+description1: 'Restores $s1 mana per 5 sec.'
+```
+
+## Spell 21992 (Thunderfury) - Classic build 5875
+```
+entry: 21992
+build: 5875
+effect1: 6 (Apply Aura)
+effect2: 2 (School Damage)
+effect3: 64 (Trigger Spell)
+effectBasePoints1: -26 (so -25 nature resistance)
+effectBasePoints2: 299 (so 300 nature damage)
+effectBasePoints3: 0 (trigger effect)
+effectApplyAuraName1: 22 (MOD_RESISTANCE)
+effectTriggerSpell3: 27648 (cyclone effect)
+name1: 'Thunderfury'
+description1: 'Blasts your enemy with lightning, dealing $s2 Nature damage and then jumping to additional nearby enemies. Each jump reduces that victim\'s Nature resistance by $s1. Affects $x1 targets. Your primary target is also consumed by a cyclone, slowing its attack speed by $27648s1% for $d.'
+```
+
+Key insight: effectBasePoints values are stored as (actual_value - 1) in most cases.
+So:
+- 18041: 65 stored = 66 healing
+- 21365: 8 stored = 9 MP5  
+- 21992: 299 stored = 300 nature damage, -26 stored = -25 nature resistance
