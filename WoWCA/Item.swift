@@ -1,218 +1,7 @@
-// Data/Models/Item.swift
 import Foundation
+import GRDB
 
-#if canImport(GRDB)
-    import GRDB
-#endif
-
-struct SpellMeta: Hashable {
-    var name: String
-    var description: String
-    var minDamage: Int?
-    var maxDamage: Int?
-    var extra: String?
-    var grantedManaPer5: Int?
-    var grantedHealthPer5: Int?
-    var grantedHeal: Int?
-    var grantedSpellPower: Int?
-
-    static let library: [Int: SpellMeta] = [
-        // Rejuvenating Gem - VERIFIED from Classic WoW Database
-        18041: SpellMeta(
-            name: "Increase Healing 66",
-            description: "Increases healing done by spells and effects by up to 66.",
-            grantedHeal: 66
-        ),
-        21365: SpellMeta(
-            name: "Increased Mana Regen",
-            description: "Restores 9 mana per 5 sec.",
-            grantedManaPer5: 9
-        ),
-
-        // Royal Seal of Eldre'Thalas
-        22962: SpellMeta(
-            name: "Mana Regeneration",
-            description: "Restores 9 mana per 5 seconds.",
-            grantedManaPer5: 9
-        ),
-        18396: SpellMeta(
-            name: "Increased Healing",
-            description: "Improves healing spells by up to 66.",
-            grantedHeal: 66
-        ),
-
-        // Flurry Axe - Extra attack on next swing
-        18797: SpellMeta(
-            name: "Flurry",
-            description: "Grants an extra attack on your next swing.",
-            extra: "Weapon enchantment effect"
-        ),
-
-        // Common weapon enchantments
-        7597: SpellMeta(
-            name: "Fiery Weapon",
-            description: "Gives a chance to deal additional Fire damage on melee attacks."
-        ),
-
-        // Thunderfury proc
-        21992: SpellMeta(
-            name: "Thunderfury",
-            description:
-                "Blasts your enemy with lightning, dealing 300 Nature damage and reducing Nature resistance by 25.",
-            minDamage: 300, maxDamage: 300
-        ),
-
-        // Crusader enchant
-        20034: SpellMeta(
-            name: "Crusader",
-            description:
-                "Gives a chance to increase Strength by 100 and heal for 75-125 health when striking in melee."
-        ),
-
-        // Lifesteal enchant
-        7993: SpellMeta(
-            name: "Lifesteal",
-            description: "Gives a chance to heal for a small amount when striking an enemy."
-        ),
-
-        // Basic stat enchants
-        7457: SpellMeta(
-            name: "+7 Damage",
-            description: "Permanently enchant a melee weapon to do +7 damage."
-        ),
-
-        // Strength enchants
-        7786: SpellMeta(
-            name: "+15 Strength",
-            description: "Permanently enchant a weapon to give +15 Strength."
-        ),
-
-        // Agility enchants
-        7788: SpellMeta(
-            name: "+15 Agility",
-            description: "Permanently enchant a weapon to give +15 Agility."
-        ),
-    ]
-}
-
-struct SpellEffect: Hashable {
-    var spellId: Int
-    var trigger: Int?
-    var charges: Int?
-    var cooldown: Int?
-    var ppmRate: Double?
-    var procChance: Double?
-    var category: Int?
-    var categoryCooldown: Int?
-    var meta: SpellMeta? { SpellMeta.library[spellId] }
-
-    var triggerDescription: String {
-        guard let trigger = trigger else { return "Use" }
-        switch trigger {
-        case 0: return "Use"
-        case 1: return "On Equip"
-        case 2: return "Chance on Hit"
-        case 3: return "Soulstone"
-        case 4: return "Use (No Delay)"
-        case 5: return "On Learn"
-        default: return "Unknown Trigger (\(trigger))"
-        }
-    }
-}
-
-// Aggregation helpers for spell-based bonuses
-// Aggregation helpers for spell-based bonuses
-extension Item {
-    var spellGrantedManaPer5: Int {
-        spellEffects.compactMap { $0.meta?.grantedManaPer5 }.reduce(0, +)
-    }
-    var spellGrantedHealing: Int { spellEffects.compactMap { $0.meta?.grantedHeal }.reduce(0, +) }
-    var spellGrantedSpellPower: Int {
-        spellEffects.compactMap { $0.meta?.grantedSpellPower }.reduce(0, +)
-    }
-    var spellGrantedHealthPer5: Int {
-        spellEffects.compactMap { $0.meta?.grantedHealthPer5 }.reduce(0, +)
-    }
-}
-
-// MARK: - Database Spell Lookup
-
-struct DatabaseSpell {
-    let name: String
-    let description: String
-}
-
-func lookupSpellInDatabase(spellId: Int) -> DatabaseSpell? {
-    #if canImport(GRDB)
-        guard let dbQueue = DatabaseService.shared.dbQueue else { return nil }
-
-        do {
-            return try dbQueue.read { db in
-                let row = try Row.fetchOne(
-                    db,
-                    sql: """
-                            SELECT name1, description1 
-                            FROM spell_template 
-                            WHERE entry = ? AND name1 IS NOT NULL AND name1 != ''
-                        """, arguments: [spellId])
-
-                guard let row = row,
-                    let name = row["name1"] as String?,
-                    let description = row["description1"] as String?,
-                    !name.isEmpty
-                else { return nil }
-
-                let cleanedDescription = cleanSpellDescription(
-                    description.isEmpty ? "No description available." : description)
-                return DatabaseSpell(name: name, description: cleanedDescription)
-            }
-        } catch {
-            print("Error looking up spell \(spellId): \(error)")
-            return nil
-        }
-    #else
-        return nil
-    #endif
-}
-
-func cleanSpellDescription(_ description: String) -> String {
-    var cleaned = description
-
-    // Replace common WoW spell variables with generic text
-    let replacements: [(String, String)] = [
-        ("$s1", "X"),  // spell effect value 1
-        ("$s2", "Y"),  // spell effect value 2
-        ("$s3", "Z"),  // spell effect value 3
-        ("$d", "X seconds"),  // duration
-        ("$d1", "X seconds"),  // duration 1
-        ("$d2", "Y seconds"),  // duration 2
-        ("$o1", "X"),  // over time value 1
-        ("$o2", "Y"),  // over time value 2
-        ("$m1", "X"),  // misc value 1
-        ("$m2", "Y"),  // misc value 2
-        ("$leffect:effects;", "effects"),  // conditional text
-        ("$ghis:her;", "their"),  // gender conditional
-        ("$ghe:she;", "they"),  // gender conditional
-        ("$ghim:her;", "them"),  // gender conditional
-    ]
-
-    for (pattern, replacement) in replacements {
-        cleaned = cleaned.replacingOccurrences(of: pattern, with: replacement)
-    }
-
-    // Clean up any remaining $ variables we missed
-    cleaned = cleaned.replacingOccurrences(of: #"\$\w+"#, with: "X", options: .regularExpression)
-
-    return cleaned
-}
-
-#if canImport(GRDB)
-    typealias FetchableMaybe = FetchableRecord
-#else
-    protocol FetchableMaybe {}
-#endif
-
-struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
+struct Item: Identifiable {
     var entry: Int64
     var name: String
     var description: String?
@@ -243,8 +32,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var bonding: Int?
     var material: Int?
     var sheath: Int?
-
-    // ALL 10 stat slots
     var stat_type1: Int?
     var stat_value1: Int?
     var stat_type2: Int?
@@ -265,13 +52,9 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var stat_value9: Int?
     var stat_type10: Int?
     var stat_value10: Int?
-
-    // Weapon properties
     var delay: Int?
     var range_mod: Double?
     var ammo_type: Int?
-
-    // ALL 5 damage types
     var dmg_min1: Double?
     var dmg_max1: Double?
     var dmg_type1: Int?
@@ -287,20 +70,14 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var dmg_min5: Double?
     var dmg_max5: Double?
     var dmg_type5: Int?
-
-    // Defense
     var block: Int?
     var armor: Int?
-
-    // ALL resistances
     var holy_res: Int?
     var fire_res: Int?
     var nature_res: Int?
     var frost_res: Int?
     var shadow_res: Int?
     var arcane_res: Int?
-
-    // ALL 5 spell slots
     var spellid_1: Int?
     var spelltrigger_1: Int?
     var spellcharges_1: Int?
@@ -308,7 +85,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var spellcooldown_1: Int?
     var spellcategory_1: Int?
     var spellcategorycooldown_1: Int?
-
     var spellid_2: Int?
     var spelltrigger_2: Int?
     var spellcharges_2: Int?
@@ -316,7 +92,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var spellcooldown_2: Int?
     var spellcategory_2: Int?
     var spellcategorycooldown_2: Int?
-
     var spellid_3: Int?
     var spelltrigger_3: Int?
     var spellcharges_3: Int?
@@ -324,7 +99,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var spellcooldown_3: Int?
     var spellcategory_3: Int?
     var spellcategorycooldown_3: Int?
-
     var spellid_4: Int?
     var spelltrigger_4: Int?
     var spellcharges_4: Int?
@@ -332,7 +106,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var spellcooldown_4: Int?
     var spellcategory_4: Int?
     var spellcategorycooldown_4: Int?
-
     var spellid_5: Int?
     var spelltrigger_5: Int?
     var spellcharges_5: Int?
@@ -340,8 +113,6 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var spellcooldown_5: Int?
     var spellcategory_5: Int?
     var spellcategorycooldown_5: Int?
-
-    // Special properties
     var page_text: Int?
     var page_language: Int?
     var page_material: Int?
@@ -361,198 +132,396 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
     var extra_flags: Int?
     var other_team_entry: Int?
 
+    // This property will hold the full "nerd stats" for each spell.
+    var spells: [Spell] = []
+
     var id: Int64 { entry }
+}
 
-    // MARK: - Convenience Initializer (stabilizes previews & avoids fragile memberwise ordering)
-    // This lets UI previews or focused call sites create an Item without supplying every single field
-    // in the exact stored-property order (the synthesized memberwise initializer is extremely long
-    // and easy to misuse – producing errors like: Argument 'buy_price' must precede 'item_level').
-    init(
-        entry: Int64,
-        name: String,
-        quality: Int,
-        class: Int? = nil,
-        subclass: Int? = nil,
-        inventory_type: Int? = nil,
-        item_level: Int? = nil,
-        required_level: Int? = nil,
-        stat_type1: Int? = nil, stat_value1: Int? = nil,
-        stat_type2: Int? = nil, stat_value2: Int? = nil,
-        stat_type3: Int? = nil, stat_value3: Int? = nil,
-        stat_type4: Int? = nil, stat_value4: Int? = nil,
-        delay: Int? = nil,
-        dmg_min1: Double? = nil, dmg_max1: Double? = nil, dmg_type1: Int? = nil,
-        armor: Int? = nil,
-        fire_res: Int? = nil, nature_res: Int? = nil, frost_res: Int? = nil, shadow_res: Int? = nil,
-        allowable_class: Int? = nil,
-        buy_price: Int? = nil, sell_price: Int? = nil
-    ) {
-        // Required
-        self.entry = entry
-        self.name = name
-        self.quality = quality
-
-        // Basic classification
-        self.description = nil
-        self.class = `class`
-        self.subclass = subclass
-        self.patch = nil
-        self.display_id = nil
-        self.inventory_type = inventory_type
-        self.flags = nil
-
-        // Economy
-        self.buy_count = nil
-        self.buy_price = buy_price
-        self.sell_price = sell_price
-
-        // Level / requirements
-        self.item_level = item_level
-        self.required_level = required_level
-        self.required_skill = nil
-        self.required_skill_rank = nil
-        self.required_spell = nil
-        self.required_honor_rank = nil
-        self.required_city_rank = nil
-        self.required_reputation_faction = nil
-        self.required_reputation_rank = nil
-        self.allowable_class = allowable_class
-        self.allowable_race = nil
-        self.max_count = nil
-        self.stackable = nil
-        self.container_slots = nil
-        self.bonding = nil
-        self.material = nil
-        self.sheath = nil
-
-        // Stats
-        self.stat_type1 = stat_type1
-        self.stat_value1 = stat_value1
-        self.stat_type2 = stat_type2
-        self.stat_value2 = stat_value2
-        self.stat_type3 = stat_type3
-        self.stat_value3 = stat_value3
-        self.stat_type4 = stat_type4
-        self.stat_value4 = stat_value4
-        self.stat_type5 = nil
-        self.stat_value5 = nil
-        self.stat_type6 = nil
-        self.stat_value6 = nil
-        self.stat_type7 = nil
-        self.stat_value7 = nil
-        self.stat_type8 = nil
-        self.stat_value8 = nil
-        self.stat_type9 = nil
-        self.stat_value9 = nil
-        self.stat_type10 = nil
-        self.stat_value10 = nil
-
-        // Weapon
-        self.delay = delay
-        self.range_mod = nil
-        self.ammo_type = nil
-
-        // Damage slots
-        self.dmg_min1 = dmg_min1
-        self.dmg_max1 = dmg_max1
-        self.dmg_type1 = dmg_type1
-        self.dmg_min2 = nil
-        self.dmg_max2 = nil
-        self.dmg_type2 = nil
-        self.dmg_min3 = nil
-        self.dmg_max3 = nil
-        self.dmg_type3 = nil
-        self.dmg_min4 = nil
-        self.dmg_max4 = nil
-        self.dmg_type4 = nil
-        self.dmg_min5 = nil
-        self.dmg_max5 = nil
-        self.dmg_type5 = nil
-
-        // Defense / armor / resist
-        self.block = nil
-        self.armor = armor
-        self.holy_res = nil
-        self.fire_res = fire_res
-        self.nature_res = nature_res
-        self.frost_res = frost_res
-        self.shadow_res = shadow_res
-        self.arcane_res = nil
-
-        // Spells (empty)
-        self.spellid_1 = nil
-        self.spelltrigger_1 = nil
-        self.spellcharges_1 = nil
-        self.spellppmrate_1 = nil
-        self.spellcooldown_1 = nil
-        self.spellcategory_1 = nil
-        self.spellcategorycooldown_1 = nil
-        self.spellid_2 = nil
-        self.spelltrigger_2 = nil
-        self.spellcharges_2 = nil
-        self.spellppmrate_2 = nil
-        self.spellcooldown_2 = nil
-        self.spellcategory_2 = nil
-        self.spellcategorycooldown_2 = nil
-        self.spellid_3 = nil
-        self.spelltrigger_3 = nil
-        self.spellcharges_3 = nil
-        self.spellppmrate_3 = nil
-        self.spellcooldown_3 = nil
-        self.spellcategory_3 = nil
-        self.spellcategorycooldown_3 = nil
-        self.spellid_4 = nil
-        self.spelltrigger_4 = nil
-        self.spellcharges_4 = nil
-        self.spellppmrate_4 = nil
-        self.spellcooldown_4 = nil
-        self.spellcategory_4 = nil
-        self.spellcategorycooldown_4 = nil
-        self.spellid_5 = nil
-        self.spelltrigger_5 = nil
-        self.spellcharges_5 = nil
-        self.spellppmrate_5 = nil
-        self.spellcooldown_5 = nil
-        self.spellcategory_5 = nil
-        self.spellcategorycooldown_5 = nil
-
-        // Special / misc
-        self.page_text = nil
-        self.page_language = nil
-        self.page_material = nil
-        self.start_quest = nil
-        self.lock_id = nil
-        self.random_property = nil
-        self.set_id = nil
-        self.max_durability = nil
-        self.area_bound = nil
-        self.map_bound = nil
-        self.duration = nil
-        self.bag_family = nil
-        self.disenchant_id = nil
-        self.food_type = nil
-        self.min_money_loot = nil
-        self.max_money_loot = nil
-        self.extra_flags = nil
-        self.other_team_entry = nil
+extension Item: Codable {
+    enum CodingKeys: String, CodingKey {
+        case entry, name, description, quality, `class`, subclass, patch, display_id,
+            inventory_type, flags, buy_count, buy_price, sell_price, item_level, required_level,
+            required_skill, required_skill_rank, required_spell, required_honor_rank,
+            required_city_rank, required_reputation_faction, required_reputation_rank,
+            allowable_class, allowable_race, max_count, stackable, container_slots, bonding,
+            material, sheath, stat_type1, stat_value1, stat_type2, stat_value2, stat_type3,
+            stat_value3, stat_type4, stat_value4, stat_type5, stat_value5, stat_type6, stat_value6,
+            stat_type7, stat_value7, stat_type8, stat_value8, stat_type9, stat_value9, stat_type10,
+            stat_value10, delay, range_mod, ammo_type, dmg_min1, dmg_max1, dmg_type1, dmg_min2,
+            dmg_max2, dmg_type2, dmg_min3, dmg_max3, dmg_type3, dmg_min4, dmg_max4, dmg_type4,
+            dmg_min5, dmg_max5, dmg_type5, block, armor, holy_res, fire_res, nature_res, frost_res,
+            shadow_res, arcane_res, spellid_1, spelltrigger_1, spellcharges_1, spellppmrate_1,
+            spellcooldown_1, spellcategory_1, spellcategorycooldown_1, spellid_2, spelltrigger_2,
+            spellcharges_2, spellppmrate_2, spellcooldown_2, spellcategory_2,
+            spellcategorycooldown_2, spellid_3, spelltrigger_3, spellcharges_3, spellppmrate_3,
+            spellcooldown_3, spellcategory_3, spellcategorycooldown_3, spellid_4, spelltrigger_4,
+            spellcharges_4, spellppmrate_4, spellcooldown_4, spellcategory_4,
+            spellcategorycooldown_4, spellid_5, spelltrigger_5, spellcharges_5, spellppmrate_5,
+            spellcooldown_5, spellcategory_5, spellcategorycooldown_5, page_text, page_language,
+            page_material, start_quest, lock_id, random_property, set_id, max_durability,
+            area_bound, map_bound, duration, bag_family, disenchant_id, food_type, min_money_loot,
+            max_money_loot, extra_flags, other_team_entry
     }
 
-    // MARK: - Computed Properties
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        entry = try container.decode(Int64.self, forKey: .entry)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        quality = try container.decode(Int.self, forKey: .quality)
+        `class` = try container.decodeIfPresent(Int.self, forKey: .class)
+        subclass = try container.decodeIfPresent(Int.self, forKey: .subclass)
+        patch = try container.decodeIfPresent(Int.self, forKey: .patch)
+        display_id = try container.decodeIfPresent(Int.self, forKey: .display_id)
+        inventory_type = try container.decodeIfPresent(Int.self, forKey: .inventory_type)
+        flags = try container.decodeIfPresent(Int.self, forKey: .flags)
+        buy_count = try container.decodeIfPresent(Int.self, forKey: .buy_count)
+        buy_price = try container.decodeIfPresent(Int.self, forKey: .buy_price)
+        sell_price = try container.decodeIfPresent(Int.self, forKey: .sell_price)
+        item_level = try container.decodeIfPresent(Int.self, forKey: .item_level)
+        required_level = try container.decodeIfPresent(Int.self, forKey: .required_level)
+        required_skill = try container.decodeIfPresent(Int.self, forKey: .required_skill)
+        required_skill_rank = try container.decodeIfPresent(Int.self, forKey: .required_skill_rank)
+        required_spell = try container.decodeIfPresent(Int.self, forKey: .required_spell)
+        required_honor_rank = try container.decodeIfPresent(Int.self, forKey: .required_honor_rank)
+        required_city_rank = try container.decodeIfPresent(Int.self, forKey: .required_city_rank)
+        required_reputation_faction = try container.decodeIfPresent(
+            Int.self, forKey: .required_reputation_faction)
+        required_reputation_rank = try container.decodeIfPresent(
+            Int.self, forKey: .required_reputation_rank)
+        allowable_class = try container.decodeIfPresent(Int.self, forKey: .allowable_class)
+        allowable_race = try container.decodeIfPresent(Int.self, forKey: .allowable_race)
+        max_count = try container.decodeIfPresent(Int.self, forKey: .max_count)
+        stackable = try container.decodeIfPresent(Int.self, forKey: .stackable)
+        container_slots = try container.decodeIfPresent(Int.self, forKey: .container_slots)
+        bonding = try container.decodeIfPresent(Int.self, forKey: .bonding)
+        material = try container.decodeIfPresent(Int.self, forKey: .material)
+        sheath = try container.decodeIfPresent(Int.self, forKey: .sheath)
+        stat_type1 = try container.decodeIfPresent(Int.self, forKey: .stat_type1)
+        stat_value1 = try container.decodeIfPresent(Int.self, forKey: .stat_value1)
+        stat_type2 = try container.decodeIfPresent(Int.self, forKey: .stat_type2)
+        stat_value2 = try container.decodeIfPresent(Int.self, forKey: .stat_value2)
+        stat_type3 = try container.decodeIfPresent(Int.self, forKey: .stat_type3)
+        stat_value3 = try container.decodeIfPresent(Int.self, forKey: .stat_value3)
+        stat_type4 = try container.decodeIfPresent(Int.self, forKey: .stat_type4)
+        stat_value4 = try container.decodeIfPresent(Int.self, forKey: .stat_value4)
+        stat_type5 = try container.decodeIfPresent(Int.self, forKey: .stat_type5)
+        stat_value5 = try container.decodeIfPresent(Int.self, forKey: .stat_value5)
+        stat_type6 = try container.decodeIfPresent(Int.self, forKey: .stat_type6)
+        stat_value6 = try container.decodeIfPresent(Int.self, forKey: .stat_value6)
+        stat_type7 = try container.decodeIfPresent(Int.self, forKey: .stat_type7)
+        stat_value7 = try container.decodeIfPresent(Int.self, forKey: .stat_value7)
+        stat_type8 = try container.decodeIfPresent(Int.self, forKey: .stat_type8)
+        stat_value8 = try container.decodeIfPresent(Int.self, forKey: .stat_value8)
+        stat_type9 = try container.decodeIfPresent(Int.self, forKey: .stat_type9)
+        stat_value9 = try container.decodeIfPresent(Int.self, forKey: .stat_value9)
+        stat_type10 = try container.decodeIfPresent(Int.self, forKey: .stat_type10)
+        stat_value10 = try container.decodeIfPresent(Int.self, forKey: .stat_value10)
+        delay = try container.decodeIfPresent(Int.self, forKey: .delay)
+        range_mod = try container.decodeIfPresent(Double.self, forKey: .range_mod)
+        ammo_type = try container.decodeIfPresent(Int.self, forKey: .ammo_type)
+        dmg_min1 = try container.decodeIfPresent(Double.self, forKey: .dmg_min1)
+        dmg_max1 = try container.decodeIfPresent(Double.self, forKey: .dmg_max1)
+        dmg_type1 = try container.decodeIfPresent(Int.self, forKey: .dmg_type1)
+        dmg_min2 = try container.decodeIfPresent(Double.self, forKey: .dmg_min2)
+        dmg_max2 = try container.decodeIfPresent(Double.self, forKey: .dmg_max2)
+        dmg_type2 = try container.decodeIfPresent(Int.self, forKey: .dmg_type2)
+        dmg_min3 = try container.decodeIfPresent(Double.self, forKey: .dmg_min3)
+        dmg_max3 = try container.decodeIfPresent(Double.self, forKey: .dmg_max3)
+        dmg_type3 = try container.decodeIfPresent(Int.self, forKey: .dmg_type3)
+        dmg_min4 = try container.decodeIfPresent(Double.self, forKey: .dmg_min4)
+        dmg_max4 = try container.decodeIfPresent(Double.self, forKey: .dmg_max4)
+        dmg_type4 = try container.decodeIfPresent(Int.self, forKey: .dmg_type4)
+        dmg_min5 = try container.decodeIfPresent(Double.self, forKey: .dmg_min5)
+        dmg_max5 = try container.decodeIfPresent(Double.self, forKey: .dmg_max5)
+        dmg_type5 = try container.decodeIfPresent(Int.self, forKey: .dmg_type5)
+        block = try container.decodeIfPresent(Int.self, forKey: .block)
+        armor = try container.decodeIfPresent(Int.self, forKey: .armor)
+        holy_res = try container.decodeIfPresent(Int.self, forKey: .holy_res)
+        fire_res = try container.decodeIfPresent(Int.self, forKey: .fire_res)
+        nature_res = try container.decodeIfPresent(Int.self, forKey: .nature_res)
+        frost_res = try container.decodeIfPresent(Int.self, forKey: .frost_res)
+        shadow_res = try container.decodeIfPresent(Int.self, forKey: .shadow_res)
+        arcane_res = try container.decodeIfPresent(Int.self, forKey: .arcane_res)
+        spellid_1 = try container.decodeIfPresent(Int.self, forKey: .spellid_1)
+        spelltrigger_1 = try container.decodeIfPresent(Int.self, forKey: .spelltrigger_1)
+        spellcharges_1 = try container.decodeIfPresent(Int.self, forKey: .spellcharges_1)
+        spellppmrate_1 = try container.decodeIfPresent(Double.self, forKey: .spellppmrate_1)
+        spellcooldown_1 = try container.decodeIfPresent(Int.self, forKey: .spellcooldown_1)
+        spellcategory_1 = try container.decodeIfPresent(Int.self, forKey: .spellcategory_1)
+        spellcategorycooldown_1 = try container.decodeIfPresent(
+            Int.self, forKey: .spellcategorycooldown_1)
+        spellid_2 = try container.decodeIfPresent(Int.self, forKey: .spellid_2)
+        spelltrigger_2 = try container.decodeIfPresent(Int.self, forKey: .spelltrigger_2)
+        spellcharges_2 = try container.decodeIfPresent(Int.self, forKey: .spellcharges_2)
+        spellppmrate_2 = try container.decodeIfPresent(Double.self, forKey: .spellppmrate_2)
+        spellcooldown_2 = try container.decodeIfPresent(Int.self, forKey: .spellcooldown_2)
+        spellcategory_2 = try container.decodeIfPresent(Int.self, forKey: .spellcategory_2)
+        spellcategorycooldown_2 = try container.decodeIfPresent(
+            Int.self, forKey: .spellcategorycooldown_2)
+        spellid_3 = try container.decodeIfPresent(Int.self, forKey: .spellid_3)
+        spelltrigger_3 = try container.decodeIfPresent(Int.self, forKey: .spelltrigger_3)
+        spellcharges_3 = try container.decodeIfPresent(Int.self, forKey: .spellcharges_3)
+        spellppmrate_3 = try container.decodeIfPresent(Double.self, forKey: .spellppmrate_3)
+        spellcooldown_3 = try container.decodeIfPresent(Int.self, forKey: .spellcooldown_3)
+        spellcategory_3 = try container.decodeIfPresent(Int.self, forKey: .spellcategory_3)
+        spellcategorycooldown_3 = try container.decodeIfPresent(
+            Int.self, forKey: .spellcategorycooldown_3)
+        spellid_4 = try container.decodeIfPresent(Int.self, forKey: .spellid_4)
+        spelltrigger_4 = try container.decodeIfPresent(Int.self, forKey: .spelltrigger_4)
+        spellcharges_4 = try container.decodeIfPresent(Int.self, forKey: .spellcharges_4)
+        spellppmrate_4 = try container.decodeIfPresent(Double.self, forKey: .spellppmrate_4)
+        spellcooldown_4 = try container.decodeIfPresent(Int.self, forKey: .spellcooldown_4)
+        spellcategory_4 = try container.decodeIfPresent(Int.self, forKey: .spellcategory_4)
+        spellcategorycooldown_4 = try container.decodeIfPresent(
+            Int.self, forKey: .spellcategorycooldown_4)
+        spellid_5 = try container.decodeIfPresent(Int.self, forKey: .spellid_5)
+        spelltrigger_5 = try container.decodeIfPresent(Int.self, forKey: .spelltrigger_5)
+        spellcharges_5 = try container.decodeIfPresent(Int.self, forKey: .spellcharges_5)
+        spellppmrate_5 = try container.decodeIfPresent(Double.self, forKey: .spellppmrate_5)
+        spellcooldown_5 = try container.decodeIfPresent(Int.self, forKey: .spellcooldown_5)
+        spellcategory_5 = try container.decodeIfPresent(Int.self, forKey: .spellcategory_5)
+        spellcategorycooldown_5 = try container.decodeIfPresent(
+            Int.self, forKey: .spellcategorycooldown_5)
+        page_text = try container.decodeIfPresent(Int.self, forKey: .page_text)
+        page_language = try container.decodeIfPresent(Int.self, forKey: .page_language)
+        page_material = try container.decodeIfPresent(Int.self, forKey: .page_material)
+        start_quest = try container.decodeIfPresent(Int.self, forKey: .start_quest)
+        lock_id = try container.decodeIfPresent(Int.self, forKey: .lock_id)
+        random_property = try container.decodeIfPresent(Int.self, forKey: .random_property)
+        set_id = try container.decodeIfPresent(Int.self, forKey: .set_id)
+        max_durability = try container.decodeIfPresent(Int.self, forKey: .max_durability)
+        area_bound = try container.decodeIfPresent(Int.self, forKey: .area_bound)
+        map_bound = try container.decodeIfPresent(Int.self, forKey: .map_bound)
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        bag_family = try container.decodeIfPresent(Int.self, forKey: .bag_family)
+        disenchant_id = try container.decodeIfPresent(Int.self, forKey: .disenchant_id)
+        food_type = try container.decodeIfPresent(Int.self, forKey: .food_type)
+        min_money_loot = try container.decodeIfPresent(Int.self, forKey: .min_money_loot)
+        max_money_loot = try container.decodeIfPresent(Int.self, forKey: .max_money_loot)
+        extra_flags = try container.decodeIfPresent(Int.self, forKey: .extra_flags)
+        other_team_entry = try container.decodeIfPresent(Int.self, forKey: .other_team_entry)
 
-    /// Returns quality color name for UI
-    var qualityColor: String {
-        switch quality {
-        case 0: return "gray"  // Poor
-        case 1: return "white"  // Common
-        case 2: return "green"  // Uncommon
-        case 3: return "blue"  // Rare
-        case 4: return "purple"  // Epic
-        case 5: return "orange"  // Legendary
-        default: return "white"
+        // spells is not decoded from the database, it's populated later.
+        spells = []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(entry, forKey: .entry)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(quality, forKey: .quality)
+        try container.encode(`class`, forKey: .class)
+        try container.encode(subclass, forKey: .subclass)
+        try container.encode(patch, forKey: .patch)
+        try container.encode(display_id, forKey: .display_id)
+        try container.encode(inventory_type, forKey: .inventory_type)
+        try container.encode(flags, forKey: .flags)
+        try container.encode(buy_count, forKey: .buy_count)
+        try container.encode(buy_price, forKey: .buy_price)
+        try container.encode(sell_price, forKey: .sell_price)
+        try container.encode(item_level, forKey: .item_level)
+        try container.encode(required_level, forKey: .required_level)
+        try container.encode(required_skill, forKey: .required_skill)
+        try container.encode(required_skill_rank, forKey: .required_skill_rank)
+        try container.encode(required_spell, forKey: .required_spell)
+        try container.encode(required_honor_rank, forKey: .required_honor_rank)
+        try container.encode(required_city_rank, forKey: .required_city_rank)
+        try container.encode(required_reputation_faction, forKey: .required_reputation_faction)
+        try container.encode(required_reputation_rank, forKey: .required_reputation_rank)
+        try container.encode(allowable_class, forKey: .allowable_class)
+        try container.encode(allowable_race, forKey: .allowable_race)
+        try container.encode(max_count, forKey: .max_count)
+        try container.encode(stackable, forKey: .stackable)
+        try container.encode(container_slots, forKey: .container_slots)
+        try container.encode(bonding, forKey: .bonding)
+        try container.encode(material, forKey: .material)
+        try container.encode(sheath, forKey: .sheath)
+        try container.encode(stat_type1, forKey: .stat_type1)
+        try container.encode(stat_value1, forKey: .stat_value1)
+        try container.encode(stat_type2, forKey: .stat_type2)
+        try container.encode(stat_value2, forKey: .stat_value2)
+        try container.encode(stat_type3, forKey: .stat_type3)
+        try container.encode(stat_value3, forKey: .stat_value3)
+        try container.encode(stat_type4, forKey: .stat_type4)
+        try container.encode(stat_value4, forKey: .stat_value4)
+        try container.encode(stat_type5, forKey: .stat_type5)
+        try container.encode(stat_value5, forKey: .stat_value5)
+        try container.encode(stat_type6, forKey: .stat_type6)
+        try container.encode(stat_value6, forKey: .stat_value6)
+        try container.encode(stat_type7, forKey: .stat_type7)
+        try container.encode(stat_value7, forKey: .stat_value7)
+        try container.encode(stat_type8, forKey: .stat_type8)
+        try container.encode(stat_value8, forKey: .stat_value8)
+        try container.encode(stat_type9, forKey: .stat_type9)
+        try container.encode(stat_value9, forKey: .stat_value9)
+        try container.encode(stat_type10, forKey: .stat_type10)
+        try container.encode(stat_value10, forKey: .stat_value10)
+        try container.encode(delay, forKey: .delay)
+        try container.encode(range_mod, forKey: .range_mod)
+        try container.encode(ammo_type, forKey: .ammo_type)
+        try container.encode(dmg_min1, forKey: .dmg_min1)
+        try container.encode(dmg_max1, forKey: .dmg_max1)
+        try container.encode(dmg_type1, forKey: .dmg_type1)
+        try container.encode(dmg_min2, forKey: .dmg_min2)
+        try container.encode(dmg_max2, forKey: .dmg_max2)
+        try container.encode(dmg_type2, forKey: .dmg_type2)
+        try container.encode(dmg_min3, forKey: .dmg_min3)
+        try container.encode(dmg_max3, forKey: .dmg_max3)
+        try container.encode(dmg_type3, forKey: .dmg_type3)
+        try container.encode(dmg_min4, forKey: .dmg_min4)
+        try container.encode(dmg_max4, forKey: .dmg_max4)
+        try container.encode(dmg_type4, forKey: .dmg_type4)
+        try container.encode(dmg_min5, forKey: .dmg_min5)
+        try container.encode(dmg_max5, forKey: .dmg_max5)
+        try container.encode(dmg_type5, forKey: .dmg_type5)
+        try container.encode(block, forKey: .block)
+        try container.encode(armor, forKey: .armor)
+        try container.encode(holy_res, forKey: .holy_res)
+        try container.encode(fire_res, forKey: .fire_res)
+        try container.encode(nature_res, forKey: .nature_res)
+        try container.encode(frost_res, forKey: .frost_res)
+        try container.encode(shadow_res, forKey: .shadow_res)
+        try container.encode(arcane_res, forKey: .arcane_res)
+        try container.encode(spellid_1, forKey: .spellid_1)
+        try container.encode(spelltrigger_1, forKey: .spelltrigger_1)
+        try container.encode(spellcharges_1, forKey: .spellcharges_1)
+        try container.encode(spellppmrate_1, forKey: .spellppmrate_1)
+        try container.encode(spellcooldown_1, forKey: .spellcooldown_1)
+        try container.encode(spellcategory_1, forKey: .spellcategory_1)
+        try container.encode(spellcategorycooldown_1, forKey: .spellcategorycooldown_1)
+        try container.encode(spellid_2, forKey: .spellid_2)
+        try container.encode(spelltrigger_2, forKey: .spelltrigger_2)
+        try container.encode(spellcharges_2, forKey: .spellcharges_2)
+        try container.encode(spellppmrate_2, forKey: .spellppmrate_2)
+        try container.encode(spellcooldown_2, forKey: .spellcooldown_2)
+        try container.encode(spellcategory_2, forKey: .spellcategory_2)
+        try container.encode(spellcategorycooldown_2, forKey: .spellcategorycooldown_2)
+        try container.encode(spellid_3, forKey: .spellid_3)
+        try container.encode(spelltrigger_3, forKey: .spelltrigger_3)
+        try container.encode(spellcharges_3, forKey: .spellcharges_3)
+        try container.encode(spellppmrate_3, forKey: .spellppmrate_3)
+        try container.encode(spellcooldown_3, forKey: .spellcooldown_3)
+        try container.encode(spellcategory_3, forKey: .spellcategory_3)
+        try container.encode(spellcategorycooldown_3, forKey: .spellcategorycooldown_3)
+        try container.encode(spellid_4, forKey: .spellid_4)
+        try container.encode(spelltrigger_4, forKey: .spelltrigger_4)
+        try container.encode(spellcharges_4, forKey: .spellcharges_4)
+        try container.encode(spellppmrate_4, forKey: .spellppmrate_4)
+        try container.encode(spellcooldown_4, forKey: .spellcooldown_4)
+        try container.encode(spellcategory_4, forKey: .spellcategory_4)
+        try container.encode(spellcategorycooldown_4, forKey: .spellcategorycooldown_4)
+        try container.encode(spellid_5, forKey: .spellid_5)
+        try container.encode(spelltrigger_5, forKey: .spelltrigger_5)
+        try container.encode(spellcharges_5, forKey: .spellcharges_5)
+        try container.encode(spellppmrate_5, forKey: .spellppmrate_5)
+        try container.encode(spellcooldown_5, forKey: .spellcooldown_5)
+        try container.encode(spellcategory_5, forKey: .spellcategory_5)
+        try container.encode(spellcategorycooldown_5, forKey: .spellcategorycooldown_5)
+        try container.encode(page_text, forKey: .page_text)
+        try container.encode(page_language, forKey: .page_language)
+        try container.encode(page_material, forKey: .page_material)
+        try container.encode(start_quest, forKey: .start_quest)
+        try container.encode(lock_id, forKey: .lock_id)
+        try container.encode(random_property, forKey: .random_property)
+        try container.encode(set_id, forKey: .set_id)
+        try container.encode(max_durability, forKey: .max_durability)
+        try container.encode(area_bound, forKey: .area_bound)
+        try container.encode(map_bound, forKey: .map_bound)
+        try container.encode(duration, forKey: .duration)
+        try container.encode(bag_family, forKey: .bag_family)
+        try container.encode(disenchant_id, forKey: .disenchant_id)
+        try container.encode(food_type, forKey: .food_type)
+        try container.encode(min_money_loot, forKey: .min_money_loot)
+        try container.encode(max_money_loot, forKey: .max_money_loot)
+        try container.encode(extra_flags, forKey: .extra_flags)
+        try container.encode(other_team_entry, forKey: .other_team_entry)
+    }
+}
+
+extension Item: Equatable, Hashable {
+    static func == (lhs: Item, rhs: Item) -> Bool {
+        lhs.entry == rhs.entry
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(entry)
+    }
+}
+
+extension Item: FetchableRecord, TableRecord {
+    nonisolated static var databaseTableName: String { "items" }
+}
+
+struct SpellEffect: Codable, Hashable {
+    var spellId: Int
+    var trigger: Int?
+    var charges: Int?
+    var cooldown: Int?
+    var ppmRate: Double?
+    var procChance: Double?
+    var category: Int?
+    var categoryCooldown: Int?
+
+    var triggerDescription: String {
+        guard let trigger = trigger else { return "Use" }
+        switch trigger {
+        case 0: return "Use"
+        case 1: return "On Equip"
+        case 2: return "Chance on Hit"
+        case 3: return "Soulstone"
+        case 4: return "Use (No Delay)"
+        case 5: return "On Learn"
+        default: return "Unknown Trigger (\(trigger))"
         }
     }
+}
 
-    /// Returns quality name
+extension Item {
+    var allSpellEffects: [SpellEffect] {
+        var effects: [SpellEffect] = []
+        if let spellId = spellid_1, spellId != 0 {
+            effects.append(
+                SpellEffect(
+                    spellId: spellId, trigger: spelltrigger_1, charges: spellcharges_1,
+                    cooldown: spellcooldown_1, ppmRate: spellppmrate_1, category: spellcategory_1,
+                    categoryCooldown: spellcategorycooldown_1))
+        }
+        if let spellId = spellid_2, spellId != 0 {
+            effects.append(
+                SpellEffect(
+                    spellId: spellId, trigger: spelltrigger_2, charges: spellcharges_2,
+                    cooldown: spellcooldown_2, ppmRate: spellppmrate_2, category: spellcategory_2,
+                    categoryCooldown: spellcategorycooldown_2))
+        }
+        if let spellId = spellid_3, spellId != 0 {
+            effects.append(
+                SpellEffect(
+                    spellId: spellId, trigger: spelltrigger_3, charges: spellcharges_3,
+                    cooldown: spellcooldown_3, ppmRate: spellppmrate_3, category: spellcategory_3,
+                    categoryCooldown: spellcategorycooldown_3))
+        }
+        if let spellId = spellid_4, spellId != 0 {
+            effects.append(
+                SpellEffect(
+                    spellId: spellId, trigger: spelltrigger_4, charges: spellcharges_4,
+                    cooldown: spellcooldown_4, ppmRate: spellppmrate_4, category: spellcategory_4,
+                    categoryCooldown: spellcategorycooldown_4))
+        }
+        if let spellId = spellid_5, spellId != 0 {
+            effects.append(
+                SpellEffect(
+                    spellId: spellId, trigger: spelltrigger_5, charges: spellcharges_5,
+                    cooldown: spellcooldown_5, ppmRate: spellppmrate_5, category: spellcategory_5,
+                    categoryCooldown: spellcategorycooldown_5))
+        }
+        return effects
+    }
+}
+
+extension Item {
     var qualityName: String {
         switch quality {
         case 0: return "Poor"
@@ -561,405 +530,37 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
         case 3: return "Rare"
         case 4: return "Epic"
         case 5: return "Legendary"
-        default: return "Unknown"
+        default: return "Artifact"
         }
-    }
-
-    // Human-readable class mask (Classic era). Returns nil if unrestricted or unknown.
-    var allowableClassNames: String? {
-        guard let mask = allowable_class, mask != -1 else { return nil }
-        let mapping: [(Int, String)] = [
-            (1, "Warrior"), (2, "Paladin"), (4, "Hunter"), (8, "Rogue"),
-            (16, "Priest"), (64, "Shaman"), (128, "Mage"), (256, "Warlock"),
-            (1024, "Druid"),
-        ]
-        let names = mapping.compactMap { (bit, name) -> String? in (mask & bit) != 0 ? name : nil }
-        return names.isEmpty ? nil : names.joined(separator: ", ")
-    }
-
-    // Human-readable race mask (Classic era). Returns nil if unrestricted or unknown.
-    var allowableRaceNames: String? {
-        guard let mask = allowable_race, mask != -1 else { return nil }
-        let mapping: [(Int, String)] = [
-            (1, "Human"), (2, "Orc"), (4, "Dwarf"), (8, "Night Elf"),
-            (16, "Undead"), (32, "Tauren"), (64, "Gnome"), (128, "Troll"),
-        ]
-        let names = mapping.compactMap { (bit, name) -> String? in (mask & bit) != 0 ? name : nil }
-        return names.isEmpty ? nil : names.joined(separator: ", ")
-    }
-
-    // Formatted skill requirement (e.g., "Engineering (225)").
-    var skillRequirementString: String? {
-        guard let skill = required_skill else { return nil }
-        var base: String
-        switch skill {
-        case 164: base = "Blacksmithing"
-        case 165: base = "Leatherworking"
-        case 171: base = "Alchemy"
-        case 182: base = "Herbalism"
-        case 185: base = "Cooking"
-        case 186: base = "Mining"
-        case 197: base = "Tailoring"
-        case 202: base = "Engineering"
-        case 333: base = "Enchanting"
-        case 356: base = "Fishing"
-        case 393: base = "Skinning"
-        case 755: base = "Jewelcrafting"  // (TBC onward)
-        default: base = "Skill \(skill)"
-        }
-        if let rank = required_skill_rank, rank > 0 { return "\(base) (\(rank))" }
-        return base
-    }
-
-    // Reputation requirement string if present.
-    var reputationRequirementString: String? {
-        guard let faction = required_reputation_faction, let rank = required_reputation_rank else {
-            return nil
-        }
-        let rankName: String
-        switch rank {
-        case 0: rankName = "Hated"
-        case 1: rankName = "Hostile"
-        case 2: rankName = "Unfriendly"
-        case 3: rankName = "Neutral"
-        case 4: rankName = "Friendly"
-        case 5: rankName = "Honored"
-        case 6: rankName = "Revered"
-        case 7: rankName = "Exalted"
-        default: rankName = "Rank \(rank)"
-        }
-        return "Faction \(faction) (\(rankName))"
-    }
-
-    // Durability string.
-    var durabilityString: String? {
-        guard let dur = max_durability, dur > 0 else { return nil }
-        return "Durability \(dur)"
-    }
-
-    // Block value description (only if positive). Separate from stat mapping for shields.
-    var blockString: String? {
-        guard let blk = block, blk > 0 else { return nil }
-        return "Block \(blk)"
-    }
-
-    // Bag / container slots (if item is a container)
-    var containerSlotsString: String? {
-        guard let slots = container_slots, slots > 0 else { return nil }
-        return "\(slots) Slot Bag"
-    }
-
-    // Bag family (specialized bag type) simplified mapping.
-    var bagFamilyName: String? {
-        guard let family = bag_family, family > 0 else { return nil }
-        // This is a mask; for simplicity return first matched known type.
-        let mapping: [(Int, String)] = [
-            (0x01, "Arrows"), (0x02, "Bullets"), (0x04, "Soul Shards"),
-            (0x08, "Leatherworking"), (0x10, "Inscription"), (0x20, "Herbs"),
-            (0x40, "Enchanting"), (0x80, "Engineering"), (0x100, "Keys"),
-            (0x200, "Gems"), (0x400, "Mining"), (0x800, "Soulbound Equipment"),
-            (0x1000, "Vanity Pets"), (0x2000, "Currency"), (0x4000, "Quest"),
-        ]
-        let names = mapping.compactMap { (bit, name) -> String? in (family & bit) != 0 ? name : nil
-        }
-        return names.isEmpty ? "Bag Family \(family)" : names.joined(separator: ", ")
-    }
-
-    // Aggregated advanced / rarely used fields (only those present will be shown in UI Advanced section).
-    var advancedAttributes: [(String, String)] {
-        var rows: [(String, String)] = []
-        if let rp = random_property { rows.append(("Random Property", "\(rp)")) }
-        if let lock = lock_id { rows.append(("Lock ID", "\(lock)")) }
-        if let dis = disenchant_id { rows.append(("Disenchant ID", "\(dis)")) }
-        if let area = area_bound { rows.append(("Area Bound", "\(area)")) }
-        if let map = map_bound { rows.append(("Map Bound", "\(map)")) }
-        if let dur = duration, dur > 0 { rows.append(("Duration (ms)", "\(dur)")) }
-        if let mm = min_money_loot, mm > 0 { rows.append(("Min Money Loot", "\(mm)")) }
-        if let mx = max_money_loot, mx > 0 { rows.append(("Max Money Loot", "\(mx)")) }
-        if let other = other_team_entry { rows.append(("Other Team Entry", "\(other)")) }
-        if let flags = extra_flags, flags != 0 {
-            rows.append(("Extra Flags", "0x\(String(flags, radix: 16))"))
-        }
-        return rows
-    }
-
-    /// Returns weapon DPS (damage per second) if it's a weapon
-    var weaponDPS: Double? {
-        guard let delay = delay, delay > 0,
-            let minDmg = dmg_min1, let maxDmg = dmg_max1,
-            minDmg > 0 || maxDmg > 0
-        else { return nil }
-
-        let avgDamage = (minDmg + maxDmg) / 2.0
-        let speedInSeconds = Double(delay) / 1000.0
-        return avgDamage / speedInSeconds
-    }
-
-    var spellEffects: [SpellEffect] {
-        var effects: [SpellEffect] = []
-        let spellSlots = [
-            (
-                spellid_1, spelltrigger_1, spellcharges_1, spellcooldown_1, spellppmrate_1,
-                spellcategory_1, spellcategorycooldown_1
-            ),
-            (
-                spellid_2, spelltrigger_2, spellcharges_2, spellcooldown_2, spellppmrate_2,
-                spellcategory_2, spellcategorycooldown_2
-            ),
-            (
-                spellid_3, spelltrigger_3, spellcharges_3, spellcooldown_3, spellppmrate_3,
-                spellcategory_3, spellcategorycooldown_3
-            ),
-            (
-                spellid_4, spelltrigger_4, spellcharges_4, spellcooldown_4, spellppmrate_4,
-                spellcategory_4, spellcategorycooldown_4
-            ),
-            (
-                spellid_5, spelltrigger_5, spellcharges_5, spellcooldown_5, spellppmrate_5,
-                spellcategory_5, spellcategorycooldown_5
-            ),
-        ]
-
-        for (id, trigger, charges, cooldown, ppm, cat, catCD) in spellSlots {
-            if let spellId = id, spellId > 0 {
-                var procChance: Double?
-                if let ppmRate = ppm, ppmRate > 0, let weaponDelay = self.delay, weaponDelay > 0,
-                    trigger == 2
-                {
-                    let weaponSpeedSeconds = Double(weaponDelay) / 1000.0
-                    procChance = (ppmRate * weaponSpeedSeconds / 60.0) * 100.0
-                }
-
-                effects.append(
-                    SpellEffect(
-                        spellId: spellId,
-                        trigger: trigger,
-                        charges: charges,
-                        cooldown: cooldown,
-                        ppmRate: ppm,
-                        procChance: procChance,
-                        category: cat,
-                        categoryCooldown: catCD
-                    ))
-            }
-        }
-        return effects
-    }
-
-    /// Filtered spell effects intended for user-facing display.
-    /// Rules:
-    /// - Always include Use (0) and On Equip (1) effects.
-    /// - Include Chance on Hit (2) only if we have metadata (to avoid noisy internal procs) OR a PPM value.
-    /// - Exclude unknown triggers unless they have metadata.
-    /// - De-duplicate by spellId preserving first occurrence.
-    var displayedSpellEffects: [SpellEffect] {
-        var seen: Set<Int> = []
-        return spellEffects.filter { effect in
-            guard !seen.contains(effect.spellId) else { return false }
-            seen.insert(effect.spellId)
-            let trig = effect.trigger ?? 0
-            switch trig {
-            case 0, 1:  // Use / On Equip
-                return true
-            case 2:  // Chance on Hit
-                // Show only if we can enrich (meta) or if it has an actual ppm hint
-                return effect.meta != nil || (effect.ppmRate ?? 0) > 0
-            case 3, 4, 5:  // Soulstone / Use (No Delay) / On Learn
-                return effect.meta != nil
-            default:
-                return effect.meta != nil
-            }
-        }
-    }
-
-    /// Spell effects that were filtered out as likely internal / noise.
-    var internalSpellEffects: [SpellEffect] {
-        let displayedSet = Set(displayedSpellEffects.map { $0.spellId })
-        return spellEffects.filter { !displayedSet.contains($0.spellId) }
-    }
-
-    var primarySpellEffectDescription: String? {
-        guard let effect = spellEffects.first else { return nil }
-
-        var description = "\(effect.triggerDescription)"
-
-        if let charges = effect.charges, charges != 0 {
-            description += " (\(abs(charges)) Charges)"
-        }
-
-        if let cooldown = effect.cooldown, cooldown > 0 {
-            let seconds = cooldown / 1000
-            if seconds >= 60 {
-                description += " (\(seconds / 60)m CD)"
-            } else {
-                description += " (\(seconds)s CD)"
-            }
-        }
-        return description
-    }
-
-    var isWeapon: Bool {
-        guard let itemClass = `class` else { return false }
-        return itemClass == 2  // Weapon class
-    }
-
-    var hasArmor: Bool {
-        guard let armorValue = armor else { return false }
-        return armorValue > 0
-    }
-
-    var armorString: String? {
-        guard let armor = armor, armor > 0 else { return nil }
-        return "\(armor) Armor"
-    }
-
-    var weaponDamageString: String? {
-        guard let minDmg = dmg_min1, let maxDmg = dmg_max1,
-            minDmg > 0 || maxDmg > 0
-        else { return nil }
-
-        if minDmg == maxDmg {
-            return String(format: "%.0f Damage", minDmg)
-        } else {
-            return String(format: "%.0f - %.0f Damage", minDmg, maxDmg)
-        }
-    }
-
-    // MARK: - MEGA Damage Aggregation
-    // Collect ALL damage types (up to 5) with their school for comprehensive display.
-    struct DamageTypeBundle: Hashable {
-        let min: Double
-        let max: Double
-        let school: Int
-    }
-
-    var allDamageTypes: [DamageTypeBundle] {
-        let slots: [(Double?, Double?, Int?)] = [
-            (dmg_min1, dmg_max1, dmg_type1),
-            (dmg_min2, dmg_max2, dmg_type2),
-            (dmg_min3, dmg_max3, dmg_type3),
-            (dmg_min4, dmg_max4, dmg_type4),
-            (dmg_min5, dmg_max5, dmg_type5),
-        ]
-        return slots.compactMap { (minOpt, maxOpt, typeOpt) in
-            guard let min = minOpt, let max = maxOpt, min > 0 || max > 0 else { return nil }
-            return DamageTypeBundle(min: min, max: max, school: typeOpt ?? 0)
-        }
-    }
-
-    // Primary (first) damage line with school name if elemental.
-    var primaryDamageString: String? {
-        guard let first = allDamageTypes.first else { return nil }
-        let schoolName = damageTypeName(for: first.school)
-        if first.min == first.max {
-            return String(
-                format: "%@%@%.0f %@%@Damage",
-                schoolName.isEmpty ? "" : "",
-                schoolName.isEmpty ? "" : "",
-                first.min,
-                schoolName,
-                schoolName.isEmpty ? "" : " "
-            )
-            .replacingOccurrences(of: "  ", with: " ")
-            .trimmingCharacters(in: .whitespaces)
-        } else {
-            return String(
-                format: "%.0f - %.0f %@%@Damage",
-                first.min, first.max,
-                schoolName,
-                schoolName.isEmpty ? "" : " "
-            )
-            .replacingOccurrences(of: "  ", with: " ")
-            .trimmingCharacters(in: .whitespaces)
-        }
-    }
-
-    // Additional elemental / secondary damage lines.
-    var secondaryDamageStrings: [String] {
-        guard allDamageTypes.count > 1 else { return [] }
-        return allDamageTypes.dropFirst().map { dmg in
-            let schoolName = damageTypeName(for: dmg.school)
-            if dmg.min == dmg.max {
-                return String(
-                    format: "+%.0f %@Damage", dmg.min, schoolName + (schoolName.isEmpty ? "" : " ")
-                )
-                .replacingOccurrences(of: "  ", with: " ")
-                .trimmingCharacters(in: .whitespaces)
-            } else {
-                return String(
-                    format: "+%.0f-%.0f %@Damage", dmg.min, dmg.max,
-                    schoolName + (schoolName.isEmpty ? "" : " ")
-                )
-                .replacingOccurrences(of: "  ", with: " ")
-                .trimmingCharacters(in: .whitespaces)
-            }
-        }
-    }
-
-    // Total DPS across all damage types (physical + elemental) using weapon speed.
-    var totalDPS: Double? {
-        guard let delay = delay, delay > 0, !allDamageTypes.isEmpty else { return nil }
-        let totalMin = allDamageTypes.reduce(0) { $0 + $1.min }
-        let totalMax = allDamageTypes.reduce(0) { $0 + $1.max }
-        guard totalMin > 0 || totalMax > 0 else { return nil }
-        let avg = (totalMin + totalMax) / 2.0
-        return avg / (Double(delay) / 1000.0)
-    }
-
-    var weaponSpeed: String? {
-        guard let delay = delay, delay > 0 else { return nil }
-        let speedInSeconds = Double(delay) / 1000.0
-        return String(format: "%.2f sec", speedInSeconds)
-    }
-
-    var dpsString: String? {
-        guard let minDmg = dmg_min1,
-            let maxDmg = dmg_max1,
-            let delay = delay,
-            delay > 0
-        else { return nil }
-
-        let avgDamage = (minDmg + maxDmg) / 2.0
-        let speed = Double(delay) / 1000.0
-        let dps = avgDamage / speed
-
-        return String(format: "%.1f DPS", dps)
     }
 
     var itemTypeName: String {
-        guard let itemClass = `class`, let subclass = subclass else { return "Unknown" }
-
+        guard let itemClass = self.class, let subClass = self.subclass else { return "Unknown" }
         switch itemClass {
-        case 2:  // Weapons
-            switch subclass {
-            case 0: return "One-Handed Axe"
+        case 2:  // Weapon
+            switch subClass {
+            case 0: return "Axe"
             case 1: return "Two-Handed Axe"
             case 2: return "Bow"
             case 3: return "Gun"
-            case 4: return "One-Handed Mace"
+            case 4: return "Mace"
             case 5: return "Two-Handed Mace"
             case 6: return "Polearm"
-            case 7: return "One-Handed Sword"
+            case 7: return "Sword"
             case 8: return "Two-Handed Sword"
-            case 10: return "Staff"
+            case 10: return "Dagger"
             case 13: return "Fist Weapon"
-            case 14: return "Miscellaneous"
-            case 15: return "Dagger"
-            case 16: return "Thrown"
-            case 17: return "Spear"
-            case 18: return "Crossbow"
-            case 19: return "Wand"
-            case 20: return "Fishing Pole"
+            case 15: return "Wand"
+            case 16: return "Fishing Pole"
             default: return "Weapon"
             }
         case 4:  // Armor
-            switch subclass {
-            case 0: return "Miscellaneous"
+            switch subClass {
             case 1: return "Cloth"
             case 2: return "Leather"
             case 3: return "Mail"
             case 4: return "Plate"
-            case 6: return "Shield"
+            case 5: return "Shield"
             default: return "Armor"
             }
         default:
@@ -967,248 +568,37 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
         }
     }
 
+    var isWeapon: Bool {
+        return self.class == 2
+    }
+
+    var hasArmor: Bool {
+        return armor ?? 0 > 0
+    }
+
     var formattedStats: [String] {
         var stats: [String] = []
-
-        let statTypes = [
-            (stat_type1, stat_value1), (stat_type2, stat_value2),
-            (stat_type3, stat_value3), (stat_type4, stat_value4),
-            (stat_type5, stat_value5), (stat_type6, stat_value6),
-            (stat_type7, stat_value7), (stat_type8, stat_value8),
-            (stat_type9, stat_value9), (stat_type10, stat_value10),
+        let statMap: [Int: String] = [
+            3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit", 7: "Stamina",
         ]
 
-        for (type, value) in statTypes {
-            guard let statType = type, let statValue = value, statValue != 0 else { continue }
-            if statValue > 0 {
-                // Special wording for regen stats
-                if statType == 43 {  // Mana regen (mp5)
-                    stats.append("+\(statValue) Mana per 5 sec")
-                    continue
-                } else if statType == 46 {  // Health regen
-                    stats.append("+\(statValue) Health per 5 sec")
-                    continue
-                }
-                if let statName = statName(for: statType) {
-                    stats.append("+\(statValue) \(statName)")
-                }
-            } else if statValue < 0 {  // Negative stats (e.g., cursed items) show with minus
-                if let statName = statName(for: statType) {
-                    stats.append("\(statValue) \(statName)")
-                }
+        for i in 1...10 {
+            if let type = self.value(forKey: "stat_type\(i)") as? Int,
+                let value = self.value(forKey: "stat_value\(i)") as? Int,
+                value != 0, let statName = statMap[type]
+            {
+                stats.append("+\(value) \(statName)")
             }
         }
-
         return stats
     }
 
-    /// Returns all non-zero resistances as a formatted array
-    var formattedResistances: [String] {
-        var resistances: [String] = []
-
-        if let holy = holy_res, holy > 0 {
-            resistances.append("+\(holy) Holy Resistance")
-        }
-        if let fire = fire_res, fire > 0 {
-            resistances.append("+\(fire) Fire Resistance")
-        }
-        if let nature = nature_res, nature > 0 {
-            resistances.append("+\(nature) Nature Resistance")
-        }
-        if let frost = frost_res, frost > 0 {
-            resistances.append("+\(frost) Frost Resistance")
-        }
-        if let shadow = shadow_res, shadow > 0 {
-            resistances.append("+\(shadow) Shadow Resistance")
-        }
-        if let arcane = arcane_res, arcane > 0 {
-            resistances.append("+\(arcane) Arcane Resistance")
-        }
-
-        return resistances
-    }
-
-    /// Returns primary special ability if any
-    var primarySpellEffect: String? {
-        guard let spellId = spellid_1, spellId > 0 else { return nil }
-
-        var description = "Special Ability: Spell \(spellId)"
-
-        if let trigger = spelltrigger_1 {
-            switch trigger {
-            case 0: description += " (Use)"
-            case 1: description += " (Equip)"
-            case 2: description += " (Chance on Hit)"
-            case 3: description += " (Soulstone)"
-            case 4: description += " (Use - No Delay)"
-            default: description += " (Unknown Trigger)"
-            }
-        }
-
-        if let charges = spellcharges_1, charges > 0 {
-            description += " - \(charges) Charges"
-        }
-
-        if let cooldown = spellcooldown_1, cooldown > 0 {
-            let cooldownSeconds = cooldown / 1000
-            if cooldownSeconds >= 60 {
-                description += " - \(cooldownSeconds / 60)min cooldown"
-            } else {
-                description += " - \(cooldownSeconds)sec cooldown"
-            }
-        }
-
-        return description
-    }
-
-    /// Returns all spell effects
-    var allSpellEffects: [String] {
-        var effects: [String] = []
-
-        let spellSlots = [
-            (spellid_1, spelltrigger_1, spellcharges_1, spellcooldown_1),
-            (spellid_2, spelltrigger_2, spellcharges_2, spellcooldown_2),
-            (spellid_3, spelltrigger_3, spellcharges_3, spellcooldown_3),
-            (spellid_4, spelltrigger_4, spellcharges_4, spellcooldown_4),
-            (spellid_5, spelltrigger_5, spellcharges_5, spellcooldown_5),
-        ]
-
-        for (spellId, trigger, charges, cooldown) in spellSlots {
-            guard let id = spellId, id > 0 else { continue }
-
-            // Check if we have spell metadata in our hardcoded library first
-            let spellMeta = SpellMeta.library[id]
-            var description: String
-
-            if let spellMeta = spellMeta {
-                // Show: "Spell Name (ID): Description"
-                description = "\(spellMeta.name) (\(id)): \(spellMeta.description)"
-            } else {
-                // Query database for spell name and description
-                if let dbSpell = lookupSpellInDatabase(spellId: id) {
-                    description = "\(dbSpell.name) (\(id)): \(dbSpell.description)"
-                } else {
-                    // Final fallback: "Spell ID"
-                    description = "Spell \(id)"
-                }
-            }
-
-            if let trig = trigger {
-                switch trig {
-                case 0: description += " (Use)"
-                case 1: description += " (Equip)"
-                case 2: description += " (Chance on Hit)"
-                case 3: description += " (Soulstone)"
-                case 4: description += " (Use - No Delay)"
-                default: description += " (Unknown Trigger)"
-                }
-            }
-
-            if let ch = charges, ch > 0 {
-                description += " - \(ch) Charges"
-            }
-
-            if let cd = cooldown, cd > 0 {
-                let cooldownSeconds = cd / 1000
-                if cooldownSeconds >= 60 {
-                    description += " - \(cooldownSeconds / 60)min cooldown"
-                } else {
-                    description += " - \(cooldownSeconds)sec cooldown"
-                }
-            }
-
-            effects.append(description)
-        }
-
-        return effects
-    }
-
-    // Detailed spell effect objects with extra derived info (PPM -> proc chance approximation).
-    struct DetailedSpellEffect: Hashable, Identifiable {
-        let id = UUID()
-        let spellId: Int
-        let triggerName: String
-        let charges: Int?
-        let cooldownMS: Int?
-        let ppm: Double?
-        let procChance: Double?  // derived for chance-on-hit PPM based effects
-    }
-
-    var detailedSpellEffects: [DetailedSpellEffect] {
-        guard hasSpellEffects else { return [] }
-        var list: [DetailedSpellEffect] = []
-        let slots: [(Int?, Int?, Int?, Int?, Double?)] = [
-            (spellid_1, spelltrigger_1, spellcharges_1, spellcooldown_1, spellppmrate_1),
-            (spellid_2, spelltrigger_2, spellcharges_2, spellcooldown_2, spellppmrate_2),
-            (spellid_3, spelltrigger_3, spellcharges_3, spellcooldown_3, spellppmrate_3),
-            (spellid_4, spelltrigger_4, spellcharges_4, spellcooldown_4, spellppmrate_4),
-            (spellid_5, spelltrigger_5, spellcharges_5, spellcooldown_5, spellppmrate_5),
-        ]
-        for (sid, trig, ch, cd, ppm) in slots {
-            guard let s = sid, s > 0 else { continue }
-            let trigName: String
-            switch trig ?? -1 {
-            case 0: trigName = "Use"
-            case 1: trigName = "On Equip"
-            case 2: trigName = "Chance on Hit"
-            case 3: trigName = "Soulstone"
-            case 4: trigName = "Use (No Delay)"
-            default: trigName = "Unknown"
-            }
-            var procChance: Double?
-            if (trig ?? -1) == 2, let ppm = ppm, ppm > 0, let wd = delay, wd > 0 {  // chance on hit
-                let speedSec = Double(wd) / 1000.0
-                procChance = (ppm * speedSec / 60.0) * 100.0
-            }
-            list.append(
-                DetailedSpellEffect(
-                    spellId: s,
-                    triggerName: trigName,
-                    charges: ch,
-                    cooldownMS: cd,
-                    ppm: ppm,
-                    procChance: procChance
-                ))
-        }
-        return list
-    }
-
-    /// Does this item have any spell effects?
     var hasSpellEffects: Bool {
-        return [spellid_1, spellid_2, spellid_3, spellid_4, spellid_5]
-            .compactMap { $0 }
-            .contains { $0 > 0 }
+        return !allSpellEffects.isEmpty
     }
 
-    /// Returns secondary damage types (elemental damage)
-    var secondaryDamageTypes: [String] {
-        var damages: [String] = []
-
-        let damageSlots = [
-            (dmg_min2, dmg_max2, dmg_type2),
-            (dmg_min3, dmg_max3, dmg_type3),
-            (dmg_min4, dmg_max4, dmg_type4),
-            (dmg_min5, dmg_max5, dmg_type5),
-        ]
-
-        for (minDmg, maxDmg, type) in damageSlots {
-            if let min = minDmg, let max = maxDmg, let dmgType = type, min > 0 || max > 0 {
-                let typeName = damageTypeName(for: dmgType)
-                if min == max {
-                    damages.append("+\(Int(min)) \(typeName) Damage")
-                } else {
-                    damages.append("+\(Int(min))-\(Int(max)) \(typeName) Damage")
-                }
-            }
-        }
-
-        return damages
-    }
-
-    /// Item binding description
     var bindingDescription: String? {
         guard let bonding = bonding else { return nil }
-
         switch bonding {
         case 1: return "Binds when picked up"
         case 2: return "Binds when equipped"
@@ -1218,121 +608,81 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
         }
     }
 
-    /// Is this item part of a set?
     var isSetItem: Bool {
-        return (set_id ?? 0) > 0
+        return set_id ?? 0 != 0
     }
 
-    /// Does this item start a quest?
     var startsQuest: Bool {
-        return (start_quest ?? 0) > 0
+        return start_quest ?? 0 != 0
     }
 
-    /// Is this a readable item?
     var isReadable: Bool {
-        return (page_text ?? 0) > 0
+        return page_text ?? 0 != 0
     }
 
-    var setName: String? {
-        guard let setId = set_id else { return nil }
-        return itemSetName(for: setId)
+    var secondaryDamageTypes: [String] {
+        var damages: [String] = []
+        for i in 2...5 {
+            if let minDmg = self.value(forKey: "dmg_min\(i)") as? Double,
+                let maxDmg = self.value(forKey: "dmg_max\(i)") as? Double,
+                let type = self.value(forKey: "dmg_type\(i)") as? Int,
+                minDmg > 0 || maxDmg > 0
+            {
+                let typeName = damageTypeName(for: type)
+                damages.append("+\(Int(minDmg))-\(Int(maxDmg)) \(typeName) Damage")
+            }
+        }
+        return damages
     }
 
-    private func itemSetName(for setId: Int) -> String? {
-        // This is a simplified mapping. A real app might load this from a separate table.
-        let setNames: [Int: String] = [
-            1: "The Gladiator", 41: "Dal'Rend's Arms", 65: "The Postmaster",
-            81: "Spirit of Eskhandar", 121: "Valor", 122: "Magister's",
-            123: "Devout", 124: "Dreadmist", 141: "Wildheart",
-            142: "Beaststalker's", 143: "Lightforge", 144: "Shadowcraft",
-            161: "Arcanist", 162: "Felheart", 163: "Cenarion",
-            164: "Giantstalker", 165: "Earthfury", 166: "Might",
-            167: "Lawbringer", 168: "Nightslayer", 181: "Necropile",
-            182: "Cadaverous", 183: "Bloodmail", 184: "Deathbone",
-            185: "Volcanic", 186: "Ironweave", 201: "Prophecy",
-            202: "Nemesis", 203: "Stormrage", 204: "Dragonstalker's",
-            205: "Ten Storms", 206: "Judgement", 207: "Bloodfang",
-            208: "Wrath", 210: "Netherwind", 211: "Transcendence",
-            212: "Bonescythe", 213: "Thunderfury", 214: "Redemption",
-            215: "Plagueheart", 216: "The Five Thunders",
-        ]
-        return setNames[setId]
+    var formattedResistances: [String] {
+        var resists: [String] = []
+        if let holy = holy_res, holy > 0 { resists.append("+\(holy) Holy Resistance") }
+        if let fire = fire_res, fire > 0 { resists.append("+\(fire) Fire Resistance") }
+        if let nature = nature_res, nature > 0 { resists.append("+\(nature) Nature Resistance") }
+        if let frost = frost_res, frost > 0 { resists.append("+\(frost) Frost Resistance") }
+        if let shadow = shadow_res, shadow > 0 { resists.append("+\(shadow) Shadow Resistance") }
+        if let arcane = arcane_res, arcane > 0 { resists.append("+\(arcane) Arcane Resistance") }
+        return resists
+    }
+
+    var weaponDamageString: String? {
+        guard isWeapon, let minDmg = dmg_min1, let maxDmg = dmg_max1 else { return nil }
+        return "\(Int(minDmg)) - \(Int(maxDmg))"
+    }
+
+    var weaponSpeed: String? {
+        guard isWeapon, let delay = delay else { return nil }
+        return String(format: "%.2f", Double(delay) / 1000.0)
+    }
+
+    var dpsString: String? {
+        guard isWeapon, let minDmg = dmg_min1, let maxDmg = dmg_max1, let delay = delay, delay > 0
+        else { return nil }
+        let avgDmg = (minDmg + maxDmg) / 2.0
+        let dps = avgDmg / (Double(delay) / 1000.0)
+        return String(format: "%.2f", dps)
+    }
+
+    var armorString: String? {
+        guard let armor = armor, armor > 0 else { return nil }
+        return "\(armor) Armor"
     }
 
     private func damageTypeName(for type: Int) -> String {
         switch type {
-        case 0: return ""
         case 1: return "Holy"
         case 2: return "Fire"
         case 3: return "Nature"
         case 4: return "Frost"
         case 5: return "Shadow"
         case 6: return "Arcane"
-        default: return "Magic"
+        default: return "Physical"
         }
     }
 
-    private func statName(for type: Int) -> String? {
-        switch type {
-        case 3: return "Agility"
-        case 4: return "Strength"
-        case 5: return "Intellect"
-        case 6: return "Spirit"
-        case 7: return "Stamina"
-        case 12: return "Defense"
-        case 13: return "Dodge"
-        case 14: return "Parry"
-        case 15: return "Block"
-        case 16: return "Hit"
-        case 17: return "Crit"
-        case 18: return "Hit (Ranged)"
-        case 19: return "Crit (Ranged)"
-        case 20: return "Hit (Spell)"
-        case 21: return "Crit (Spell)"
-        case 31: return "Hit"
-        case 32: return "Crit"
-        case 35: return "Resilience"
-        case 36: return "Haste"
-        case 37: return "Expertise"
-        case 38: return "Attack Power"
-        case 39: return "Ranged Attack Power"
-        case 43: return "Mana per 5"
-        case 44: return "Armor Penetration"
-        case 45: return "Spell Power"
-        case 46: return "Health per 5"
-        case 47: return "Spell Penetration"
-        case 48: return "Block Value"
-        default: return nil
-        }
-    }  // Reflection-based dump of all stored fields (literal everything) for UI disclosure.
-    var rawFieldPairs: [(String, String)] {
-        var result: [(String, String)] = []
+    private func value(forKey key: String) -> Any? {
         let mirror = Mirror(reflecting: self)
-        for child in mirror.children {
-            guard let label = child.label else { continue }
-            // Skip computed id (duplicate of entry)
-            if label == "id" { continue }
-            if let str = stringifyRawValue(child.value) {
-                result.append((label, str))
-            }
-        }
-        // Stable sort by field name
-        result.sort { $0.0 < $1.0 }
-        return result
-    }
-
-    private func stringifyRawValue(_ value: Any) -> String? {
-        // Unwrap optionals
-        let mirrored = Mirror(reflecting: value)
-        if mirrored.displayStyle == .optional {
-            if let first = mirrored.children.first {
-                return stringifyRawValue(first.value)
-            } else {
-                return nil
-            }
-        }
-        if let v = value as? String { return v }
-        if let v = value as? CustomStringConvertible { return v.description }
-        return String(describing: value)
+        return mirror.children.first { $0.label == key }?.value
     }
 }

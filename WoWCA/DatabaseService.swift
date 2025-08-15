@@ -26,6 +26,11 @@ final class DatabaseService {
                 ])
         }
 
+        print("📦 Bundled DB path: \(bundled.path)")
+        let bundledSize =
+            (try? FileManager.default.attributesOfItem(atPath: bundled.path))?[.size] as? Int64 ?? 0
+        print("📦 Bundled DB size: \(bundledSize) bytes")
+
         try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
 
         // Always remove any existing cached database and copy fresh from bundle
@@ -33,7 +38,7 @@ final class DatabaseService {
             try fm.removeItem(at: targetURL)
         }
         try fm.copyItem(at: bundled, to: targetURL)
-        print("[DB] Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
+        print("📂 Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
 
         var config = Configuration()
         config.readonly = true
@@ -41,6 +46,15 @@ final class DatabaseService {
             try db.execute(sql: "PRAGMA journal_mode = DELETE")
         }
         dbQueue = try DatabaseQueue(path: targetURL.path, configuration: config)
+
+        // Verify the database has correct data
+        let itemCount = try dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM items") ?? 0
+        }
+        let ftsCount = try dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM items_fts") ?? 0
+        }
+        print("🗃️ Database loaded: \(itemCount) items, \(ftsCount) FTS entries")
         print("[DB] Opened database (readonly) at: \(targetURL.path)")
     }
 }

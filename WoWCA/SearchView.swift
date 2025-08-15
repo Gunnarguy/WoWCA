@@ -21,17 +21,19 @@ struct SearchView: View {
                 } else {
                     List(vm.results) { item in
                         NavigationLink(value: item) {
-                            ItemRowViewEnhanced(item: item)
+                            ItemRowView(item: item)
                         }
                     }
                     .navigationDestination(for: Item.self) { item in
-                        ItemDetailViewEnhanced(item: item)
+                        ItemDetailView(item: item)
                     }
                 }
             }
             .navigationTitle("Classic Items")
         }
         .searchable(text: $vm.query, prompt: "Search by name")
-        .onChange(of: vm.query) { vm.updateQuery($0) }
+        .onChange(of: vm.query) { _, newValue in
+            vm.updateQuery(newValue)
+        }
     }
 }
