@@ -17,15 +17,6 @@ struct SpellMeta: Hashable {
     var grantedSpellPower: Int?
 
     static let library: [Int: SpellMeta] = [
-        // Thunderfury, Blessed Blade of the Windseeker
-        21992: SpellMeta(
-            name: "Thunderfury",
-            description:
-                "Blasts your enemy with lightning, dealing 300 Nature damage and then jumping to additional nearby enemies. Each jump reduces that victim's Nature resistance by 25. Your primary target is also consumed by a cyclone, slowing its attack speed for 12 sec.",
-            minDamage: 300, maxDamage: 300,
-            extra: "Reduces Nature Resistance by 25 and Attack Speed by 20%."
-        ),
-
         // Rejuvenating Gem - VERIFIED from Classic WoW Database
         18041: SpellMeta(
             name: "Increase Healing 66",
@@ -48,6 +39,58 @@ struct SpellMeta: Hashable {
             name: "Increased Healing",
             description: "Improves healing spells by up to 66.",
             grantedHeal: 66
+        ),
+
+        // Flurry Axe - Extra attack on next swing
+        18797: SpellMeta(
+            name: "Flurry",
+            description: "Grants an extra attack on your next swing.",
+            extra: "Weapon enchantment effect"
+        ),
+
+        // Common weapon enchantments
+        7597: SpellMeta(
+            name: "Fiery Weapon",
+            description: "Gives a chance to deal additional Fire damage on melee attacks."
+        ),
+
+        // Thunderfury proc
+        21992: SpellMeta(
+            name: "Thunderfury",
+            description:
+                "Blasts your enemy with lightning, dealing 300 Nature damage and reducing Nature resistance by 25.",
+            minDamage: 300, maxDamage: 300
+        ),
+
+        // Crusader enchant
+        20034: SpellMeta(
+            name: "Crusader",
+            description:
+                "Gives a chance to increase Strength by 100 and heal for 75-125 health when striking in melee."
+        ),
+
+        // Lifesteal enchant
+        7993: SpellMeta(
+            name: "Lifesteal",
+            description: "Gives a chance to heal for a small amount when striking an enemy."
+        ),
+
+        // Basic stat enchants
+        7457: SpellMeta(
+            name: "+7 Damage",
+            description: "Permanently enchant a melee weapon to do +7 damage."
+        ),
+
+        // Strength enchants
+        7786: SpellMeta(
+            name: "+15 Strength",
+            description: "Permanently enchant a weapon to give +15 Strength."
+        ),
+
+        // Agility enchants
+        7788: SpellMeta(
+            name: "+15 Agility",
+            description: "Permanently enchant a weapon to give +15 Agility."
         ),
     ]
 }
@@ -90,6 +133,77 @@ extension Item {
     var spellGrantedHealthPer5: Int {
         spellEffects.compactMap { $0.meta?.grantedHealthPer5 }.reduce(0, +)
     }
+}
+
+// MARK: - Database Spell Lookup
+
+struct DatabaseSpell {
+    let name: String
+    let description: String
+}
+
+func lookupSpellInDatabase(spellId: Int) -> DatabaseSpell? {
+    #if canImport(GRDB)
+        guard let dbQueue = DatabaseService.shared.dbQueue else { return nil }
+
+        do {
+            return try dbQueue.read { db in
+                let row = try Row.fetchOne(
+                    db,
+                    sql: """
+                            SELECT name1, description1 
+                            FROM spell_template 
+                            WHERE entry = ? AND name1 IS NOT NULL AND name1 != ''
+                        """, arguments: [spellId])
+
+                guard let row = row,
+                    let name = row["name1"] as String?,
+                    let description = row["description1"] as String?,
+                    !name.isEmpty
+                else { return nil }
+
+                let cleanedDescription = cleanSpellDescription(
+                    description.isEmpty ? "No description available." : description)
+                return DatabaseSpell(name: name, description: cleanedDescription)
+            }
+        } catch {
+            print("Error looking up spell \(spellId): \(error)")
+            return nil
+        }
+    #else
+        return nil
+    #endif
+}
+
+func cleanSpellDescription(_ description: String) -> String {
+    var cleaned = description
+
+    // Replace common WoW spell variables with generic text
+    let replacements: [(String, String)] = [
+        ("$s1", "X"),  // spell effect value 1
+        ("$s2", "Y"),  // spell effect value 2
+        ("$s3", "Z"),  // spell effect value 3
+        ("$d", "X seconds"),  // duration
+        ("$d1", "X seconds"),  // duration 1
+        ("$d2", "Y seconds"),  // duration 2
+        ("$o1", "X"),  // over time value 1
+        ("$o2", "Y"),  // over time value 2
+        ("$m1", "X"),  // misc value 1
+        ("$m2", "Y"),  // misc value 2
+        ("$leffect:effects;", "effects"),  // conditional text
+        ("$ghis:her;", "their"),  // gender conditional
+        ("$ghe:she;", "they"),  // gender conditional
+        ("$ghim:her;", "them"),  // gender conditional
+    ]
+
+    for (pattern, replacement) in replacements {
+        cleaned = cleaned.replacingOccurrences(of: pattern, with: replacement)
+    }
+
+    // Clean up any remaining $ variables we missed
+    cleaned = cleaned.replacingOccurrences(of: #"\$\w+"#, with: "X", options: .regularExpression)
+
+    return cleaned
 }
 
 #if canImport(GRDB)
@@ -962,7 +1076,22 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
         for (spellId, trigger, charges, cooldown) in spellSlots {
             guard let id = spellId, id > 0 else { continue }
 
-            var description = "Spell \(id)"
+            // Check if we have spell metadata in our hardcoded library first
+            let spellMeta = SpellMeta.library[id]
+            var description: String
+
+            if let spellMeta = spellMeta {
+                // Show: "Spell Name (ID): Description"
+                description = "\(spellMeta.name) (\(id)): \(spellMeta.description)"
+            } else {
+                // Query database for spell name and description
+                if let dbSpell = lookupSpellInDatabase(spellId: id) {
+                    description = "\(dbSpell.name) (\(id)): \(dbSpell.description)"
+                } else {
+                    // Final fallback: "Spell ID"
+                    description = "Spell \(id)"
+                }
+            }
 
             if let trig = trigger {
                 switch trig {
@@ -1175,9 +1304,7 @@ struct Item: Codable, Identifiable, Equatable, Hashable, FetchableMaybe {
         case 48: return "Block Value"
         default: return nil
         }
-    }
-
-    // Reflection-based dump of all stored fields (literal everything) for UI disclosure.
+    }  // Reflection-based dump of all stored fields (literal everything) for UI disclosure.
     var rawFieldPairs: [(String, String)] {
         var result: [(String, String)] = []
         let mirror = Mirror(reflecting: self)
