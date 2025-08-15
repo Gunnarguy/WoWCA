@@ -10,7 +10,7 @@ echo "🔎 Verifying $DB"
 # 1. Version table
 if sqlite3 "$DB" \
   "SELECT 1 FROM sqlite_master WHERE type='table' AND name='data_version';" | grep -q 1; then
-  read PATCH BUILD_DATE ITEM_COUNT MAX_ILVL <<<"$(sqlite3 "$DB" "SELECT patch_version, build_date, item_count, max_item_level FROM data_version ORDER BY id DESC LIMIT 1;")"
+  read PATCH BUILD_DATE ITEM_COUNT MAX_ILVL <<<"$(sqlite3 "$DB" "SELECT patch_version||'|'||build_date||'|'||item_count||'|'||max_item_level FROM data_version ORDER BY id DESC LIMIT 1;" | tr '|' ' ')"
   echo "   Patch: $PATCH  Build Date: $BUILD_DATE  Items: $ITEM_COUNT  Max iLvl: $MAX_ILVL"
   [ "$PATCH" = "$EXPECTED_PATCH" ] || echo "   ⚠️ Expected patch $EXPECTED_PATCH got $PATCH"
 else
@@ -18,7 +18,7 @@ else
 fi
 
 # 2. Basic invariants
-read COUNT MAX_ILVL_ACTUAL <<<"$(sqlite3 "$DB" "SELECT COUNT(*), MAX(item_level) FROM items;")"
+read COUNT MAX_ILVL_ACTUAL <<<"$(sqlite3 "$DB" "SELECT COUNT(*)||' '||MAX(item_level) FROM items;")"
 [ "$COUNT" -ge 1000 ] || fail "Too few items ($COUNT)"
 [ "$MAX_ILVL_ACTUAL" -ge 60 ] || fail "Suspicious max item_level ($MAX_ILVL_ACTUAL)"
 echo "   Item count + max item_level OK"

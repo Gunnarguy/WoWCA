@@ -49,7 +49,7 @@ echo "[build_db] Creating schema (mega + metadata)"
 rm -f "$OUT_DB"
 
 sqlite3 "$OUT_DB" <<'EOF'
-PRAGMA journal_mode = WAL;
+PRAGMA journal_mode = DELETE;
 PRAGMA synchronous = NORMAL;
 
 CREATE TABLE items (

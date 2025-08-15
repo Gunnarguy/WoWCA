@@ -44,13 +44,13 @@ final class ItemSearchViewModel {
                     let sql = "SELECT * FROM items WHERE entry = ? LIMIT ?"
                     return try Item.fetchAll(db, sql: sql, arguments: [itemId, limit])
                 } else {
-                    // Use FTS5 MATCH + bm25() ordering. Prefix matching via token*.
+                    // Use FTS5 MATCH + ranking. Prefix matching via token*.
                     let sql = """
                         SELECT i.*
-                        FROM items_fts
-                        JOIN items i ON i.entry = items_fts.entry
+                        FROM items_fts f
+                        JOIN items i ON i.entry = f.entry
                         WHERE items_fts MATCH ?
-                        ORDER BY bm25(items_fts) ASC
+                        ORDER BY rank
                         LIMIT ?
                         """
                     // Transform user input into a safe FTS5 query. Simple heuristic:

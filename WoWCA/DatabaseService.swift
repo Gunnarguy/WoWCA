@@ -17,24 +17,29 @@ final class DatabaseService {
             create: true)
         let targetURL = appSupport.appendingPathComponent(dbFileName)
 
-        if !fm.fileExists(atPath: targetURL.path) {
-            guard let bundled = Bundle.main.url(forResource: "items", withExtension: "sqlite")
-            else {
-                throw NSError(
-                    domain: "DB", code: 1,
-                    userInfo: [
-                        NSLocalizedDescriptionKey: "Bundled items.sqlite not found in app bundle"
-                    ])
-            }
-            try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
-            try fm.copyItem(at: bundled, to: targetURL)
-            print("[DB] Copied bundled \(dbFileName) -> \(targetURL.path)")
-        } else {
-            print("[DB] Using existing cached \(dbFileName) at \(targetURL.path)")
+        guard let bundled = Bundle.main.url(forResource: "items", withExtension: "sqlite")
+        else {
+            throw NSError(
+                domain: "DB", code: 1,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Bundled items.sqlite not found in app bundle"
+                ])
         }
+
+        try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
+
+        // Always remove any existing cached database and copy fresh from bundle
+        if fm.fileExists(atPath: targetURL.path) {
+            try fm.removeItem(at: targetURL)
+        }
+        try fm.copyItem(at: bundled, to: targetURL)
+        print("[DB] Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
 
         var config = Configuration()
         config.readonly = true
+        config.prepareDatabase { db in
+            try db.execute(sql: "PRAGMA journal_mode = DELETE")
+        }
         dbQueue = try DatabaseQueue(path: targetURL.path, configuration: config)
         print("[DB] Opened database (readonly) at: \(targetURL.path)")
     }
