@@ -175,7 +175,228 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
     var requiredFactionId: Int?
     var requiredFactionRep: Int?
 
+    var spellBonuses: [String] {
+        var bonuses: [String] = []
+
+        // Check for spell damage (aura 13) and healing (aura 135) combinations
+        var spellDamageValue: Int? = nil
+        var healingValue: Int? = nil
+
+        for i in 1...3 {
+            var auraName: Int?
+            var basePoints: Int?
+
+            switch i {
+            case 1:
+                auraName = effectApplyAuraName1
+                basePoints = effectBasePoints1
+            case 2:
+                auraName = effectApplyAuraName2
+                basePoints = effectBasePoints2
+            case 3:
+                auraName = effectApplyAuraName3
+                basePoints = effectBasePoints3
+            default:
+                break
+            }
+
+            if let aura = auraName, let points = basePoints {
+                let value = points + 1  // Base points are stored as value - 1
+
+                switch aura {
+                case 13:
+                    spellDamageValue = value
+                case 135:
+                    // Check if this is a standalone healing bonus or part of spell damage
+                    if spellDamageValue == nil {
+                        healingValue = value
+                    }
+                case 108:
+                    healingValue = value
+                default:
+                    break
+                }
+            }
+        }
+
+        // Add the bonuses to the array
+        if let spellDamage = spellDamageValue {
+            if let healing = healingValue, spellDamage == healing {
+                // Both spell damage and healing with same value
+                bonuses.append("+\(spellDamage) Spell Damage and Healing")
+            } else {
+                bonuses.append("+\(spellDamage) Spell Damage")
+            }
+        }
+
+        if let healing = healingValue, spellDamageValue == nil {
+            // Standalone healing bonus
+            bonuses.append("+\(healing) Healing Power")
+        }
+
+        return bonuses
+    }
+
     nonisolated static var databaseTableName: String { "spell_template_ultimate_nerd" }
+
+    // Parse spell description and replace placeholder variables
+    func parsedDescription() -> String {
+        guard let description = description1, !description.isEmpty else {
+            return "No description available"
+        }
+
+        var parsed = description
+
+        // Replace $s1, $s2, $s3 with calculated effect values
+        if let basePoints1 = effectBasePoints1 {
+            let value1 = basePoints1 + 1  // Base points are stored as value - 1
+            parsed = parsed.replacingOccurrences(of: "$s1", with: "\(value1)")
+        }
+
+        if let basePoints2 = effectBasePoints2 {
+            let value2 = basePoints2 + 1
+            parsed = parsed.replacingOccurrences(of: "$s2", with: "\(value2)")
+        }
+
+        if let basePoints3 = effectBasePoints3 {
+            let value3 = basePoints3 + 1
+            parsed = parsed.replacingOccurrences(of: "$s3", with: "\(value3)")
+        }
+
+        // Replace $o1, $o2, $o3 with over-time damage (usually same as base points)
+        if let basePoints1 = effectBasePoints1 {
+            let value1 = basePoints1 + 1
+            parsed = parsed.replacingOccurrences(of: "$o1", with: "\(value1)")
+        }
+
+        if let basePoints2 = effectBasePoints2 {
+            let value2 = basePoints2 + 1
+            parsed = parsed.replacingOccurrences(of: "$o2", with: "\(value2)")
+        }
+
+        if let basePoints3 = effectBasePoints3 {
+            let value3 = basePoints3 + 1
+            parsed = parsed.replacingOccurrences(of: "$o3", with: "\(value3)")
+        }
+
+        // Replace $d with duration (this would need duration lookup from another table)
+        // For now, we'll show a placeholder
+        parsed = parsed.replacingOccurrences(of: "$d", with: "[duration]")
+
+        // Handle references to other spells like $6788d (duration of spell 6788)
+        let spellDurationPattern = #"\$(\d+)d"#
+        parsed = parsed.replacingOccurrences(
+            of: spellDurationPattern,
+            with: "[spell $1 duration]",
+            options: .regularExpression)
+
+        // Handle cross-spell references like $17809s1
+        let crossSpellPattern = #"\$(\d+)s(\d+)"#
+        parsed = parsed.replacingOccurrences(
+            of: crossSpellPattern,
+            with: "[spell $1 effect $2]",
+            options: .regularExpression)
+
+        // Handle pluralization like $lpoint:points;
+        let pluralPattern = #"\$l([^:]+):([^;]+);"#
+        parsed = parsed.replacingOccurrences(
+            of: pluralPattern,
+            with: "$2",  // Use plural form
+            options: .regularExpression)
+
+        // Replace remaining $ patterns with generic placeholders
+        parsed = parsed.replacingOccurrences(
+            of: #"\$[a-zA-Z0-9]+"#,
+            with: "X",
+            options: .regularExpression)
+
+        return parsed
+    }
+
+    // Calculate actual damage range for damage effects
+    func damageRange(effectIndex: Int) -> String? {
+        var basePoints: Int?
+        var dieSides: Int?
+        var baseDice: Double?
+        var effectType: Int?
+
+        switch effectIndex {
+        case 1:
+            basePoints = effectBasePoints1
+            dieSides = effectDieSides1
+            baseDice = effectBaseDice1
+            effectType = effect1
+        case 2:
+            basePoints = effectBasePoints2
+            dieSides = effectDieSides2
+            baseDice = effectBaseDice2
+            effectType = effect2
+        case 3:
+            basePoints = effectBasePoints3
+            dieSides = effectDieSides3
+            baseDice = effectBaseDice3
+            effectType = effect3
+        default:
+            return nil
+        }
+
+        guard let base = basePoints, let type = effectType else { return nil }
+
+        // Only show damage for actual damage effect types
+        let damageEffectTypes: Set<Int> = [1, 2, 4, 31, 44]  // School damage, instant damage, dummy damage, weapon damage, normalized weapon damage
+        guard damageEffectTypes.contains(type) else { return nil }
+
+        let actualBase = base + 1  // Base points are stored as value - 1
+
+        // Only show damage if it's a positive value
+        if let sides = dieSides, sides > 0, let dice = baseDice, dice > 0, actualBase > 0 {
+            let minDamage = actualBase + Int(dice)
+            let maxDamage = actualBase + Int(dice) * sides
+            return "\(minDamage)-\(maxDamage)"
+        } else if actualBase > 0 {
+            return "\(actualBase)"
+        }
+
+        return nil
+    }
+}
+
+extension Spell {
+    enum CodingKeys: String, CodingKey {
+        case id = "entry"  // Map id field to entry column
+        case build, name1, description1, school, category, castingTimeIndex, dispel, mechanic
+        case attributes, attributesEx, attributesEx2, attributesEx3, attributesEx4
+        case stances, stancesNot, targets, targetCreatureType, requiresShapeShift
+        case procFlags, procChance, procCharges, maxLevel, baseLevel, spellLevel
+        case durationIndex, powerType, manaCost, manaCostPerLevel, manaPerSecond
+        case manaPerSecondPerLevel, rangeIndex, speed, modalNextSpell, stackAmount
+        case totem1, totem2, reagent1, reagent2, reagent3, reagent4, reagent5, reagent6
+        case reagent7, reagent8, reagentCount1, reagentCount2, reagentCount3, reagentCount4
+        case reagentCount5, reagentCount6, reagentCount7, reagentCount8, equippedItemClass
+        case equippedItemSubClassMask, equippedItemInventoryTypeMask, effect1, effect2, effect3
+        case effectDieSides1, effectDieSides2, effectDieSides3, effectBaseDice1, effectBaseDice2
+        case effectBaseDice3, effectDicePerLevel1, effectDicePerLevel2, effectDicePerLevel3
+        case effectRealPointsPerLevel1, effectRealPointsPerLevel2, effectRealPointsPerLevel3
+        case effectBasePoints1, effectBasePoints2, effectBasePoints3, effectMechanic1
+        case effectMechanic2, effectMechanic3, effectImplicitTargetA1, effectImplicitTargetA2
+        case effectImplicitTargetA3, effectImplicitTargetB1, effectImplicitTargetB2
+        case effectImplicitTargetB3, effectRadiusIndex1, effectRadiusIndex2, effectRadiusIndex3
+        case effectApplyAuraName1, effectApplyAuraName2, effectApplyAuraName3, effectAmplitude1
+        case effectAmplitude2, effectAmplitude3, effectMultipleValue1, effectMultipleValue2
+        case effectMultipleValue3, effectChainTarget1, effectChainTarget2, effectChainTarget3
+        case effectItemType1, effectItemType2, effectItemType3, effectMiscValue1, effectMiscValue2
+        case effectMiscValue3, effectTriggerSpell1, effectTriggerSpell2, effectTriggerSpell3
+        case effectPointsPerComboPoint1, effectPointsPerComboPoint2, effectPointsPerComboPoint3
+        case spellVisual1, spellVisual2, spellIconId, activeIconId, spellPriority
+        case name2, name3, name4, name5, name6, name7, name8, name9, name10, name11, name12
+        case name13, name14, name15, name16, description2, description3, description4
+        case description5, description6, description7, description8, description9, description10
+        case description11, description12, description13, description14, description15
+        case description16, recoveryTime, categoryRecoveryTime, interruptFlags, auraInterruptFlags
+        case channelInterruptFlags, procTypeMask, procEx, dmgClass, preventionType, stanceBarOrder
+        case dmgMultiplier1, dmgMultiplier2, dmgMultiplier3, minFactionId, minReputation
+        case requiredFactionId, requiredFactionRep
+    }
 }
 
 #if canImport(GRDB)

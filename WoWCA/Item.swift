@@ -579,7 +579,7 @@ extension Item {
     var formattedStats: [String] {
         var stats: [String] = []
         let statMap: [Int: String] = [
-            3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit", 7: "Stamina",
+            1: "Health", 3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit", 7: "Stamina",
         ]
 
         for i in 1...10 {
@@ -591,6 +591,34 @@ extension Item {
             }
         }
         return stats
+    }
+
+    var formattedSpellBonuses: [String] {
+        return spells.flatMap { $0.spellBonuses }
+    }
+
+    // Method to load spells from the database and populate spell bonuses
+    func loadSpells() async -> [String] {
+        guard let queue = DatabaseService.shared.dbQueue else {
+            return []
+        }
+
+        let spellIds = allSpellEffects.map { $0.spellId }
+        guard !spellIds.isEmpty else {
+            return []
+        }
+
+        do {
+            let loadedSpells: [Spell] = try await queue.read { db in
+                try Spell.filter(spellIds.contains(Column("entry"))).fetchAll(db)
+            }
+
+            // Extract spell bonuses directly without modifying the item
+            return loadedSpells.flatMap { $0.spellBonuses }
+        } catch {
+            print("❌ Error loading spells for item \(entry): \(error)")
+            return []
+        }
     }
 
     var hasSpellEffects: Bool {

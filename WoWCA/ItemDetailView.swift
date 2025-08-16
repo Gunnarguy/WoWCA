@@ -1,8 +1,11 @@
+import GRDB
 // UI/ItemDetailView.swift
 import SwiftUI
 
 struct ItemDetailView: View {
     let item: Item
+    @State private var spellBonuses: [String] = []
+    @State private var isLoadingSpellBonuses = false
 
     var body: some View {
         ScrollView {
@@ -20,98 +23,9 @@ struct ItemDetailView: View {
                     }
                 }
 
-                // Spell Effects Section (Prominent Display)
+                // Spell Effects Section (Prominent Display) – now shows names & descriptions for ALL attached spells
                 if hasSpellEffects() {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("✨ Spell Effects")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            if item.spellid_1 ?? 0 > 0 {
-                                HStack {
-                                    Text("🔮 Spell 1:")
-                                        .font(.subheadline)
-                                        .bold()
-                                    Text("ID \(item.spellid_1!)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.blue)
-                                    if item.spelltrigger_1 ?? 0 > 0 {
-                                        Text("(Trigger: \(item.spelltrigger_1!))")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-
-                            if item.spellid_2 ?? 0 > 0 {
-                                HStack {
-                                    Text("🔮 Spell 2:")
-                                        .font(.subheadline)
-                                        .bold()
-                                    Text("ID \(item.spellid_2!)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.blue)
-                                    if item.spelltrigger_2 ?? 0 > 0 {
-                                        Text("(Trigger: \(item.spelltrigger_2!))")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-
-                            if item.spellid_3 ?? 0 > 0 {
-                                HStack {
-                                    Text("🔮 Spell 3:")
-                                        .font(.subheadline)
-                                        .bold()
-                                    Text("ID \(item.spellid_3!)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.blue)
-                                    if item.spelltrigger_3 ?? 0 > 0 {
-                                        Text("(Trigger: \(item.spelltrigger_3!))")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-
-                            if item.spellid_4 ?? 0 > 0 {
-                                HStack {
-                                    Text("🔮 Spell 4:")
-                                        .font(.subheadline)
-                                        .bold()
-                                    Text("ID \(item.spellid_4!)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.blue)
-                                    if item.spelltrigger_4 ?? 0 > 0 {
-                                        Text("(Trigger: \(item.spelltrigger_4!))")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-
-                            if item.spellid_5 ?? 0 > 0 {
-                                HStack {
-                                    Text("🔮 Spell 5:")
-                                        .font(.subheadline)
-                                        .bold()
-                                    Text("ID \(item.spellid_5!)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.blue)
-                                    if item.spelltrigger_5 ?? 0 > 0 {
-                                        Text("(Trigger: \(item.spelltrigger_5!))")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    spellEffectsSection
                 }
 
                 Divider()
@@ -129,8 +43,14 @@ struct ItemDetailView: View {
                 }
 
                 // Stats Section
-                if !item.formattedStats.isEmpty {
+                if !item.formattedStats.isEmpty || !spellBonuses.isEmpty {
                     statsSection
+                    Divider()
+                }
+
+                // Spell Bonus Section
+                if !spellBonuses.isEmpty {
+                    spellBonusSection
                     Divider()
                 }
 
@@ -143,7 +63,7 @@ struct ItemDetailView: View {
                 }
 
                 // ULTIMATE NERD MODE section
-                if !item.spells.isEmpty {
+                if item.hasSpellEffects || !loadedSpells.isEmpty {
                     ultimateNerdStatsSection
                     Divider()
                 }
@@ -169,6 +89,12 @@ struct ItemDetailView: View {
                     pricingSection
                 }
 
+                // Advanced Properties Section
+                if hasAdvancedProperties() {
+                    Divider()
+                    advancedPropertiesSection
+                }
+
                 // All Database Fields Section
                 Divider()
                 allDatabaseFieldsSection
@@ -180,6 +106,39 @@ struct ItemDetailView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private var spellBonusSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Spell Bonuses", systemImage: "star.fill")
+                .font(.headline)
+                .foregroundStyle(.yellow)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(spellBonuses, id: \.self) { bonus in
+                    HStack {
+                        Image(systemName: "star.circle.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text(bonus)
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    private func loadSpellBonuses() async {
+        guard !isLoadingSpellBonuses && spellBonuses.isEmpty else { return }
+
+        isLoadingSpellBonuses = true
+        let bonuses = await item.loadSpells()
+        await MainActor.run {
+            self.spellBonuses = bonuses
+            self.isLoadingSpellBonuses = false
+        }
     }
 
     @ViewBuilder
@@ -258,8 +217,33 @@ struct ItemDetailView: View {
                             .fontWeight(.medium)
                     }
                 }
+
+                // Display spell bonuses in the same stats section
+                ForEach(spellBonuses, id: \.self) { bonus in
+                    HStack {
+                        Image(systemName: "star.circle.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text(bonus)
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if isLoadingSpellBonuses {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .secondary))
+                            .scaleEffect(0.8)
+                        Text("Loading spell bonuses...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(.leading)
+        }
+        .task {
+            await loadSpellBonuses()
         }
     }
 
@@ -383,6 +367,273 @@ struct ItemDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private var advancedPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Advanced Properties", systemImage: "gear")
+                .font(.headline)
+                .foregroundStyle(.purple)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let disenchantId = item.disenchant_id, disenchantId > 0 {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Disenchantable (ID: \(disenchantId))")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let randomProp = item.random_property, randomProp != 0 {
+                    HStack {
+                        Image(systemName: "dice")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Random Properties (ID: \(randomProp))")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let setId = item.set_id, setId > 0 {
+                    HStack {
+                        Image(systemName: "rectangle.3.group")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Item Set (ID: \(setId))")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let bagFamily = item.bag_family, bagFamily > 0 {
+                    HStack {
+                        Image(systemName: "bag")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Bag Family: \(bagFamilyName(bagFamily))")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let foodType = item.food_type, foodType > 0 {
+                    HStack {
+                        Image(systemName: "fork.knife")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Food Type: \(foodTypeName(foodType))")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let duration = item.duration, duration > 0 {
+                    HStack {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Duration: \(duration/60) minutes")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let lockId = item.lock_id, lockId > 0 {
+                    HStack {
+                        Image(systemName: "lock")
+                            .foregroundStyle(.gray)
+                            .font(.caption)
+                        Text("Requires Lock Picking (ID: \(lockId))")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    // Helper function to check if item has advanced properties
+    private func hasAdvancedProperties() -> Bool {
+        return (item.disenchant_id ?? 0) > 0 || (item.random_property ?? 0) != 0
+            || (item.set_id ?? 0) > 0 || (item.bag_family ?? 0) > 0 || (item.food_type ?? 0) > 0
+            || (item.duration ?? 0) > 0 || (item.lock_id ?? 0) > 0
+    }
+
+    // MARK: - Spell Loading State
+    @State private var loadedSpells: [Int: Spell] = [:]
+    @State private var isLoadingSpells = false
+    @State private var spellLoadError: String? = nil
+
+    // Fetch spells from DB if not already provided on the item
+    private func ensureSpellsLoaded() {
+        // If spells already populated externally, index and bail
+        let effectIds = item.allSpellEffects.map { $0.spellId }
+        if !item.spells.isEmpty && loadedSpells.isEmpty {
+            loadedSpells = Dictionary(uniqueKeysWithValues: item.spells.map { ($0.id, $0) })
+            return
+        }
+        guard !effectIds.isEmpty else { return }
+        // If we already have them, skip
+        if effectIds.allSatisfy({ loadedSpells[$0] != nil }) { return }
+        isLoadingSpells = true
+        spellLoadError = nil
+        Task { @MainActor in
+            do {
+                let ids = effectIds
+                guard let queue = DatabaseService.shared.dbQueue else {
+                    isLoadingSpells = false
+                    return
+                }
+                let spells: [Spell] = try await queue.read { db in
+                    try Spell.filter(ids.contains(Column("entry"))).fetchAll(db)
+                }
+                print("📖 Loaded \(spells.count) spells for IDs: \(ids)")
+                for s in spells {
+                    loadedSpells[s.id] = s
+                    print("📖 Spell \(s.id): \(s.name1 ?? "no name")")
+                }
+                isLoadingSpells = false
+            } catch {
+                print("❌ Spell loading error: \(error)")
+                spellLoadError = error.localizedDescription
+                isLoadingSpells = false
+            }
+        }
+    }
+
+    // MARK: - Spell Effects Section View
+    @ViewBuilder
+    private var spellEffectsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("✨ Spell Effects")
+                .font(.headline)
+                .foregroundColor(.blue)
+            if isLoadingSpells {
+                ProgressView().progressViewStyle(.circular)
+                    .padding(.vertical, 4)
+            } else if let error = spellLoadError {
+                Text("Failed to load spells: \(error)")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(item.allSpellEffects.enumerated()), id: \.offset) { idx, effect in
+                    let spell = loadedSpells[effect.spellId]
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("🔮 Spell \(idx + 1)")
+                                .font(.subheadline).bold()
+                            Text(
+                                spell?.name1?.isEmpty == false
+                                    ? (spell!.name1!) : "ID \(effect.spellId)"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                            Text("[" + effect.triggerDescription + "]")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let spell = spell {
+                            let parsedDesc = spell.parsedDescription()
+                            if !parsedDesc.isEmpty && parsedDesc != "No description available" {
+                                Text(parsedDesc)
+                                    .font(.caption)
+                                    .foregroundStyle(.primary)
+                                    .padding(6)
+                                    .background(Color.orange.opacity(0.08))
+                                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                            }
+
+                            // Show damage ranges for each effect
+                            HStack(spacing: 8) {
+                                ForEach(1...3, id: \.self) { effectIndex in
+                                    if let damageRange = spell.damageRange(effectIndex: effectIndex)
+                                    {
+                                        Text("💥 \(damageRange) damage")
+                                            .font(.caption2)
+                                            .foregroundStyle(.red)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(Color.red.opacity(0.1))
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Additional spell details if we have the spell data
+                        if let spell = spell {
+                            HStack(spacing: 16) {
+                                if let school = spell.school, school > 0 {
+                                    Text("🎯 \(schoolName(school))")
+                                        .font(.caption2)
+                                        .foregroundStyle(.blue)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+                                if let mana = spell.manaCost, mana > 0 {
+                                    Text("🔮 \(mana) mana")
+                                        .font(.caption2)
+                                        .foregroundStyle(.blue)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+                                if let level = spell.spellLevel, level > 0 {
+                                    Text("📈 Level \(level)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.secondary.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+                            }
+                        }
+                        // Supplemental nerd metrics from ITEM data
+                        HStack(spacing: 12) {
+                            if let charges = effect.charges, charges > 0 {
+                                TagStat("Charges", "\(charges)")
+                            }
+                            if let ppm = effect.ppmRate, ppm > 0 {
+                                TagStat("PPM", String(format: "%.1f", ppm))
+                            }
+                            if let cd = effect.cooldown, cd > 0 {
+                                let seconds = cd / 1000
+                                TagStat("Cooldown", seconds == 1 ? "1 sec" : "\(seconds) sec")
+                            }
+                            if let catCd = effect.categoryCooldown, catCd > 0 {
+                                let seconds = catCd / 1000
+                                TagStat("Cat Cooldown", seconds == 1 ? "1 sec" : "\(seconds) sec")
+                            }
+                            if let cat = effect.category, cat > 0 { TagStat("Category", "\(cat)") }
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                    .task { ensureSpellsLoaded() }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(8)
+        .onAppear { ensureSpellsLoaded() }
+    }
+
+    private func TagStat(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 2) {
+            Text(label + ":")
+            Text(value)
+                .fontWeight(.semibold)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.blue.opacity(0.1))
+        .clipShape(Capsule())
+    }
+
     // Helper functions
 
     @ViewBuilder
@@ -394,20 +645,28 @@ struct ItemDetailView: View {
                 .italic()
         }
 
-        if !item.spells.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(item.spells, id: \.self) { spell in
-                    if let description = spell.description1, !description.isEmpty {
-                        Text(description)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color.orange.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                }
-            }
+        // Note: Spell descriptions are now shown in the enhanced spellEffectsSection above
+        // This section now only shows binding info and other non-spell special abilities
+
+        if item.isSetItem {
+            Text("Part of a set")
+                .font(.caption)
+                .foregroundStyle(.blue)
+                .italic()
+        }
+
+        if item.startsQuest {
+            Text("Starts a quest")
+                .font(.caption)
+                .foregroundStyle(.green)
+                .italic()
+        }
+
+        if item.isReadable {
+            Text("Right-click to read")
+                .font(.caption)
+                .foregroundStyle(.purple)
+                .italic()
         }
     }
 
@@ -415,29 +674,135 @@ struct ItemDetailView: View {
     private var ultimateNerdStatsSection: some View {
         DisclosureGroup("Ultimate Nerd Stats") {
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(item.spells) { spell in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(spell.name1 ?? "Spell \(spell.id)")
-                            .font(.headline)
-                        Group {
-                            NerdStat(label: "Spell ID", value: String(spell.id))
-                            NerdStat(label: "Build", value: spell.build)
-                            NerdStat(label: "School", value: spell.school)
-                            NerdStat(
-                                label: "Proc Flags",
-                                value: spell.procFlags.map { "0x" + String($0, radix: 16) })
-                            NerdStat(label: "Proc Chance", value: spell.procChance.map { "\($0)%" })
+                // Show all loaded spells from the item's spell effects
+                ForEach(Array(item.allSpellEffects.enumerated()), id: \.offset) { idx, effect in
+                    if let spell = loadedSpells[effect.spellId] {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(spell.name1 ?? "Spell \(spell.id)")
+                                .font(.headline)
+                            Group {
+                                NerdStat(label: "Spell ID", value: String(spell.id))
+                                if let build = spell.build, build > 0 {
+                                    NerdStat(label: "Build", value: build)
+                                }
+                                NerdStat(
+                                    label: "School", value: spell.school.map { schoolName($0) })
+                                if let level = spell.spellLevel, level > 0 {
+                                    NerdStat(label: "Spell Level", value: level)
+                                }
+                                NerdStat(
+                                    label: "Mana Cost",
+                                    value: spell.manaCost.map { $0 > 0 ? "\($0) mana" : "Free" })
+
+                                // Item-specific data (PPM, charges, cooldowns)
+                                if let charges = effect.charges, charges > 0 {
+                                    NerdStat(label: "Charges", value: charges)
+                                }
+                                if let ppm = effect.ppmRate, ppm > 0 {
+                                    NerdStat(label: "PPM Rate", value: String(format: "%.1f", ppm))
+                                }
+                                if let cd = effect.cooldown, cd > 0 {
+                                    let seconds = cd / 1000
+                                    NerdStat(
+                                        label: "Cooldown",
+                                        value: seconds == 1 ? "1 sec" : "\(seconds) sec")
+                                }
+                                if let catCd = effect.categoryCooldown, catCd > 0 {
+                                    let seconds = catCd / 1000
+                                    NerdStat(
+                                        label: "Category Cooldown",
+                                        value: seconds == 1 ? "1 sec" : "\(seconds) sec")
+                                }
+
+                                // Show meaningful effect information
+                                if let effect1 = spell.effect1, effect1 > 0 {
+                                    NerdStat(label: "Effect 1", value: effectName(effect1))
+                                    if let basePoints = spell.effectBasePoints1 {
+                                        let actualValue = basePoints + 1
+                                        NerdStat(label: "Effect 1 Value", value: actualValue)
+                                    }
+                                    if let trigger = spell.effectTriggerSpell1, trigger > 0 {
+                                        NerdStat(label: "Triggers Spell", value: trigger)
+                                    }
+                                }
+                                if let effect2 = spell.effect2, effect2 > 0 {
+                                    NerdStat(label: "Effect 2", value: effectName(effect2))
+                                    if let basePoints = spell.effectBasePoints2 {
+                                        let actualValue = basePoints + 1
+                                        NerdStat(label: "Effect 2 Value", value: actualValue)
+                                    }
+                                }
+                                if let effect3 = spell.effect3, effect3 > 0 {
+                                    NerdStat(label: "Effect 3", value: effectName(effect3))
+                                    if let basePoints = spell.effectBasePoints3 {
+                                        let actualValue = basePoints + 1
+                                        NerdStat(label: "Effect 3 Value", value: actualValue)
+                                    }
+                                }
+
+                                // Proc information with better formatting
+                                if let procChance = spell.procChance,
+                                    procChance > 0 && procChance != 101
+                                {
+                                    NerdStat(label: "Proc Chance", value: "\(procChance)%")
+                                } else if let procChance = spell.procChance, procChance == 101 {
+                                    // 101% is a database flag meaning "has proc effect" - real % is unknown for hit-based procs
+                                    NerdStat(label: "Proc Type", value: "On Hit")
+                                }
+                                if let procFlags = spell.procFlags, procFlags > 0 {
+                                    NerdStat(
+                                        label: "Proc Conditions",
+                                        value: procFlagsDescription(procFlags))
+                                }
+
+                                // Combat information
+                                if let dmgClass = spell.dmgClass {
+                                    NerdStat(label: "Damage Type", value: damageClassName(dmgClass))
+                                }
+                                if let speed = spell.speed, speed > 0 {
+                                    NerdStat(
+                                        label: "Cast/Travel Time",
+                                        value: String(format: "%.1f sec", speed))
+                                }
+
+                                // Duration and range information
+                                if let duration = spell.durationIndex, duration > 0 {
+                                    NerdStat(label: "Duration Index", value: duration)
+                                }
+                                if let range = spell.rangeIndex, range > 0 {
+                                    NerdStat(label: "Range Index", value: range)
+                                }
+                            }
+                            Text(
+                                "💡 PPM = Procs Per Minute (real-time rate), Hit-based = % chance per hit (requires community research)"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .italic()
                         }
+                        .padding()
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    } else {
+                        // Show placeholder if spell data hasn't loaded yet
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Spell \(effect.spellId)")
+                                .font(.headline)
+                            Text("Loading spell data...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding()
+                        .background(Color.secondary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .padding()
-                    .background(Color.secondary.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
             .padding(.top, 4)
         }
         .font(.headline)
         .foregroundStyle(Color.cyan)
+        .task { ensureSpellsLoaded() }
     }
 
     @ViewBuilder
@@ -501,17 +866,178 @@ struct ItemDetailView: View {
         return "Class Restricted (\(classFlags))"
     }
 
+    // MARK: - Spell Interpretation Helpers
+
+    private func schoolName(_ school: Int) -> String {
+        switch school {
+        case 0: return "Physical"
+        case 1: return "Holy"
+        case 2: return "Fire"
+        case 3: return "Nature"
+        case 4: return "Frost"
+        case 5: return "Shadow"
+        case 6: return "Arcane"
+        default: return "Unknown (\(school))"
+        }
+    }
+
+    private func effectName(_ effect: Int) -> String {
+        switch effect {
+        case 1: return "Instant Kill"
+        case 2: return "School Damage"
+        case 3: return "Dummy"
+        case 4: return "Portal Teleport"
+        case 5: return "Teleport Units"
+        case 6: return "Apply Aura"
+        case 7: return "Environmental Damage"
+        case 8: return "Power Drain"
+        case 9: return "Health Leech"
+        case 10: return "Direct Heal"
+        case 11: return "Bind"
+        case 12: return "Portal"
+        case 13: return "Ritual Base"
+        case 14: return "Ritual Specialize"
+        case 15: return "Ritual Activate Portal"
+        case 16: return "Quest Complete"
+        case 17: return "Weapon Damage No School"
+        case 18: return "Resurrect"
+        case 19: return "Add Extra Attacks"
+        case 20: return "Dodge"
+        case 21: return "Evade"
+        case 22: return "Parry"
+        case 23: return "Block"
+        case 24: return "Create Item"
+        case 25: return "Weapon"
+        case 26: return "Defense"
+        case 27: return "Persistent Area Aura"
+        case 28: return "Summon"
+        case 29: return "Leap"
+        case 30: return "Energize"
+        case 31: return "Weapon Percent Damage"
+        case 32: return "Trigger Missile"
+        case 33: return "Open Lock"
+        case 34: return "Transform Item"
+        case 35: return "Apply Area Aura"
+        case 36: return "Learn Spell"
+        case 37: return "Spell Defense"
+        case 38: return "Dispel"
+        case 39: return "Language"
+        case 40: return "Dual Wield"
+        case 41: return "Summon Wild"
+        case 42: return "Summon Guardian"
+        case 43: return "Teleport Graveyard"
+        case 44: return "Normalized Weapon Damage"
+        case 45: return "120"
+        case 46: return "Send Taxi"
+        case 47: return "Player Pull"
+        case 48: return "Modify Threat Percent"
+        case 49: return "Steal Beneficial Buff"
+        case 50: return "Prospecting"
+        case 51: return "Apply Area Aura Friend"
+        case 52: return "Apply Area Aura Enemy"
+        default: return "Effect \(effect)"
+        }
+    }
+
+    private func damageClassName(_ dmgClass: Int) -> String {
+        switch dmgClass {
+        case 0: return "None"
+        case 1: return "Magic"
+        case 2: return "Melee"
+        case 3: return "Ranged"
+        default: return "Class \(dmgClass)"
+        }
+    }
+
+    private func bagFamilyName(_ family: Int) -> String {
+        switch family {
+        case 1: return "Arrows"
+        case 2: return "Bullets"
+        case 3: return "Soul Shards"
+        case 4: return "Leatherworking Supplies"
+        case 5: return "Inscription Supplies"
+        case 6: return "Herbs"
+        case 7: return "Enchanting Supplies"
+        case 8: return "Engineering Supplies"
+        case 9: return "Keys"
+        case 10: return "Gems"
+        case 11: return "Mining Supplies"
+        case 12: return "Soulbound Equipment"
+        case 13: return "Vanity Pets"
+        case 14: return "Currency"
+        case 15: return "Quest Items"
+        default: return "Family \(family)"
+        }
+    }
+
+    private func foodTypeName(_ type: Int) -> String {
+        switch type {
+        case 1: return "Meat"
+        case 2: return "Fish"
+        case 3: return "Cheese"
+        case 4: return "Bread"
+        case 5: return "Fungus"
+        case 6: return "Fruit"
+        case 7: return "Raw Meat"
+        case 8: return "Raw Fish"
+        default: return "Type \(type)"
+        }
+    }
+
+    private func procFlagsDescription(_ flags: Int) -> String {
+        var descriptions: [String] = []
+
+        if flags & 0x1 != 0 { descriptions.append("Heartbeat") }
+        if flags & 0x2 != 0 { descriptions.append("Kill") }
+        if flags & 0x4 != 0 { descriptions.append("Melee Hit") }
+        if flags & 0x8 != 0 { descriptions.append("Crit Hit") }
+        if flags & 0x10 != 0 { descriptions.append("Melee Miss") }
+        if flags & 0x20 != 0 { descriptions.append("Melee Dodge") }
+        if flags & 0x40 != 0 { descriptions.append("Melee Parry") }
+        if flags & 0x80 != 0 { descriptions.append("Take Damage") }
+        if flags & 0x100 != 0 { descriptions.append("Spell Hit") }
+        if flags & 0x200 != 0 { descriptions.append("Spell Crit") }
+        if flags & 0x400 != 0 { descriptions.append("Spell Miss") }
+        if flags & 0x800 != 0 { descriptions.append("Spell Resist") }
+        if flags & 0x1000 != 0 { descriptions.append("Ranged Hit") }
+        if flags & 0x2000 != 0 { descriptions.append("Ranged Crit") }
+        if flags & 0x4000 != 0 { descriptions.append("Ranged Miss") }
+
+        if descriptions.isEmpty {
+            return "0x" + String(flags, radix: 16)
+        }
+
+        return descriptions.joined(separator: ", ")
+    }
+
     @ViewBuilder
     private var allDatabaseFieldsSection: some View {
         DisclosureGroup("All Database Fields (Ultimate Nerd Mode)") {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(minimum: 120), alignment: .leading),
-                    GridItem(.flexible(minimum: 100), alignment: .leading),
-                ], alignment: .leading, spacing: 8
-            ) {
+            VStack(alignment: .leading, spacing: 16) {
+                basicInfoGrid
+                purchasingGrid
+                requirementsGrid
+                restrictionsGrid
+                statsGrid
+                weaponStatsGrid
+                damageGrid
+                defenseGrid
+                spellEffectsGrid
+                miscInfoGrid
+            }
+            .padding(.top, 8)
+        }
+        .font(.headline)
+        .foregroundStyle(Color.purple)
+    }
 
-                // Basic Info
+    // MARK: - Database Field Grids
+
+    @ViewBuilder
+    private var basicInfoGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Basic Info").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Entry ID", value: item.entry)
                 DatabaseField("Name", value: item.name)
                 DatabaseField("Description", value: item.description)
@@ -522,13 +1048,27 @@ struct ItemDetailView: View {
                 DatabaseField("Display ID", value: item.display_id)
                 DatabaseField("Inventory Type", value: item.inventory_type)
                 DatabaseField("Flags", value: item.flags)
+            }
+        }
+    }
 
-                // Purchasing
+    @ViewBuilder
+    private var purchasingGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Purchasing").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Buy Count", value: item.buy_count)
                 DatabaseField("Buy Price", value: item.buy_price)
                 DatabaseField("Sell Price", value: item.sell_price)
+            }
+        }
+    }
 
-                // Level & Requirements
+    @ViewBuilder
+    private var requirementsGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Requirements").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Item Level", value: item.item_level)
                 DatabaseField("Required Level", value: item.required_level)
                 DatabaseField("Required Skill", value: item.required_skill)
@@ -538,8 +1078,15 @@ struct ItemDetailView: View {
                 DatabaseField("Required City Rank", value: item.required_city_rank)
                 DatabaseField("Required Rep Faction", value: item.required_reputation_faction)
                 DatabaseField("Required Rep Rank", value: item.required_reputation_rank)
+            }
+        }
+    }
 
-                // Restrictions
+    @ViewBuilder
+    private var restrictionsGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Restrictions").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Allowable Class", value: item.allowable_class)
                 DatabaseField("Allowable Race", value: item.allowable_race)
                 DatabaseField("Max Count", value: item.max_count)
@@ -548,82 +1095,60 @@ struct ItemDetailView: View {
                 DatabaseField("Bonding", value: item.bonding)
                 DatabaseField("Material", value: item.material)
                 DatabaseField("Sheath", value: item.sheath)
+            }
+        }
+    }
 
-                // Stats 1-10
-                if let stat1 = item.stat_type1, let val1 = item.stat_value1 {
-                    DatabaseField("Stat Type 1", value: stat1)
-                    DatabaseField("Stat Value 1", value: val1)
-                }
-                if let stat2 = item.stat_type2, let val2 = item.stat_value2 {
-                    DatabaseField("Stat Type 2", value: stat2)
-                    DatabaseField("Stat Value 2", value: val2)
-                }
-                if let stat3 = item.stat_type3, let val3 = item.stat_value3 {
-                    DatabaseField("Stat Type 3", value: stat3)
-                    DatabaseField("Stat Value 3", value: val3)
-                }
-                if let stat4 = item.stat_type4, let val4 = item.stat_value4 {
-                    DatabaseField("Stat Type 4", value: stat4)
-                    DatabaseField("Stat Value 4", value: val4)
-                }
-                if let stat5 = item.stat_type5, let val5 = item.stat_value5 {
-                    DatabaseField("Stat Type 5", value: stat5)
-                    DatabaseField("Stat Value 5", value: val5)
-                }
-                if let stat6 = item.stat_type6, let val6 = item.stat_value6 {
-                    DatabaseField("Stat Type 6", value: stat6)
-                    DatabaseField("Stat Value 6", value: val6)
-                }
-                if let stat7 = item.stat_type7, let val7 = item.stat_value7 {
-                    DatabaseField("Stat Type 7", value: stat7)
-                    DatabaseField("Stat Value 7", value: val7)
-                }
-                if let stat8 = item.stat_type8, let val8 = item.stat_value8 {
-                    DatabaseField("Stat Type 8", value: stat8)
-                    DatabaseField("Stat Value 8", value: val8)
-                }
-                if let stat9 = item.stat_type9, let val9 = item.stat_value9 {
-                    DatabaseField("Stat Type 9", value: stat9)
-                    DatabaseField("Stat Value 9", value: val9)
-                }
-                if let stat10 = item.stat_type10, let val10 = item.stat_value10 {
-                    DatabaseField("Stat Type 10", value: stat10)
-                    DatabaseField("Stat Value 10", value: val10)
-                }
+    @ViewBuilder
+    private var statsGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Stats").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
+                statFields(type: item.stat_type1, value: item.stat_value1, index: 1)
+                statFields(type: item.stat_type2, value: item.stat_value2, index: 2)
+                statFields(type: item.stat_type3, value: item.stat_value3, index: 3)
+                statFields(type: item.stat_type4, value: item.stat_value4, index: 4)
+                statFields(type: item.stat_type5, value: item.stat_value5, index: 5)
+                statFields(type: item.stat_type6, value: item.stat_value6, index: 6)
+                statFields(type: item.stat_type7, value: item.stat_value7, index: 7)
+                statFields(type: item.stat_type8, value: item.stat_value8, index: 8)
+                statFields(type: item.stat_type9, value: item.stat_value9, index: 9)
+                statFields(type: item.stat_type10, value: item.stat_value10, index: 10)
+            }
+        }
+    }
 
-                // Weapon Stats
+    @ViewBuilder
+    private var weaponStatsGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Weapon").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Delay", value: item.delay)
                 DatabaseField("Range Mod", value: item.range_mod)
                 DatabaseField("Ammo Type", value: item.ammo_type)
+            }
+        }
+    }
 
-                // Damage 1-5
-                if let dmgMin = item.dmg_min1, let dmgMax = item.dmg_max1 {
-                    DatabaseField("Damage 1 Min", value: dmgMin)
-                    DatabaseField("Damage 1 Max", value: dmgMax)
-                    DatabaseField("Damage 1 Type", value: item.dmg_type1)
-                }
-                if let dmgMin = item.dmg_min2, let dmgMax = item.dmg_max2 {
-                    DatabaseField("Damage 2 Min", value: dmgMin)
-                    DatabaseField("Damage 2 Max", value: dmgMax)
-                    DatabaseField("Damage 2 Type", value: item.dmg_type2)
-                }
-                if let dmgMin = item.dmg_min3, let dmgMax = item.dmg_max3 {
-                    DatabaseField("Damage 3 Min", value: dmgMin)
-                    DatabaseField("Damage 3 Max", value: dmgMax)
-                    DatabaseField("Damage 3 Type", value: item.dmg_type3)
-                }
-                if let dmgMin = item.dmg_min4, let dmgMax = item.dmg_max4 {
-                    DatabaseField("Damage 4 Min", value: dmgMin)
-                    DatabaseField("Damage 4 Max", value: dmgMax)
-                    DatabaseField("Damage 4 Type", value: item.dmg_type4)
-                }
-                if let dmgMin = item.dmg_min5, let dmgMax = item.dmg_max5 {
-                    DatabaseField("Damage 5 Min", value: dmgMin)
-                    DatabaseField("Damage 5 Max", value: dmgMax)
-                    DatabaseField("Damage 5 Type", value: item.dmg_type5)
-                }
+    @ViewBuilder
+    private var damageGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Damage").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
+                damageFields(min: item.dmg_min1, max: item.dmg_max1, type: item.dmg_type1, index: 1)
+                damageFields(min: item.dmg_min2, max: item.dmg_max2, type: item.dmg_type2, index: 2)
+                damageFields(min: item.dmg_min3, max: item.dmg_max3, type: item.dmg_type3, index: 3)
+                damageFields(min: item.dmg_min4, max: item.dmg_max4, type: item.dmg_type4, index: 4)
+                damageFields(min: item.dmg_min5, max: item.dmg_max5, type: item.dmg_type5, index: 5)
+            }
+        }
+    }
 
-                // Defense
+    @ViewBuilder
+    private var defenseGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Defense & Resistances").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Block", value: item.block)
                 DatabaseField("Armor", value: item.armor)
                 DatabaseField("Holy Resistance", value: item.holy_res)
@@ -632,49 +1157,49 @@ struct ItemDetailView: View {
                 DatabaseField("Frost Resistance", value: item.frost_res)
                 DatabaseField("Shadow Resistance", value: item.shadow_res)
                 DatabaseField("Arcane Resistance", value: item.arcane_res)
+            }
+        }
+    }
 
-                // 🎯 SPELL EFFECTS 1-5 (The missing important stuff!)
-                DatabaseField("Spell ID 1", value: item.spellid_1)
-                DatabaseField("Spell Trigger 1", value: item.spelltrigger_1)
-                DatabaseField("Spell Charges 1", value: item.spellcharges_1)
-                DatabaseField("Spell PPM Rate 1", value: item.spellppmrate_1)
-                DatabaseField("Spell Cooldown 1", value: item.spellcooldown_1)
-                DatabaseField("Spell Category 1", value: item.spellcategory_1)
-                DatabaseField("Spell Cat Cooldown 1", value: item.spellcategorycooldown_1)
+    @ViewBuilder
+    private var spellEffectsGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Spell Effects").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
+                spellEffectFields(
+                    id: item.spellid_1, trigger: item.spelltrigger_1, charges: item.spellcharges_1,
+                    ppm: item.spellppmrate_1, cooldown: item.spellcooldown_1,
+                    category: item.spellcategory_1, catCooldown: item.spellcategorycooldown_1,
+                    index: 1)
+                spellEffectFields(
+                    id: item.spellid_2, trigger: item.spelltrigger_2, charges: item.spellcharges_2,
+                    ppm: item.spellppmrate_2, cooldown: item.spellcooldown_2,
+                    category: item.spellcategory_2, catCooldown: item.spellcategorycooldown_2,
+                    index: 2)
+                spellEffectFields(
+                    id: item.spellid_3, trigger: item.spelltrigger_3, charges: item.spellcharges_3,
+                    ppm: item.spellppmrate_3, cooldown: item.spellcooldown_3,
+                    category: item.spellcategory_3, catCooldown: item.spellcategorycooldown_3,
+                    index: 3)
+                spellEffectFields(
+                    id: item.spellid_4, trigger: item.spelltrigger_4, charges: item.spellcharges_4,
+                    ppm: item.spellppmrate_4, cooldown: item.spellcooldown_4,
+                    category: item.spellcategory_4, catCooldown: item.spellcategorycooldown_4,
+                    index: 4)
+                spellEffectFields(
+                    id: item.spellid_5, trigger: item.spelltrigger_5, charges: item.spellcharges_5,
+                    ppm: item.spellppmrate_5, cooldown: item.spellcooldown_5,
+                    category: item.spellcategory_5, catCooldown: item.spellcategorycooldown_5,
+                    index: 5)
+            }
+        }
+    }
 
-                DatabaseField("Spell ID 2", value: item.spellid_2)
-                DatabaseField("Spell Trigger 2", value: item.spelltrigger_2)
-                DatabaseField("Spell Charges 2", value: item.spellcharges_2)
-                DatabaseField("Spell PPM Rate 2", value: item.spellppmrate_2)
-                DatabaseField("Spell Cooldown 2", value: item.spellcooldown_2)
-                DatabaseField("Spell Category 2", value: item.spellcategory_2)
-                DatabaseField("Spell Cat Cooldown 2", value: item.spellcategorycooldown_2)
-
-                DatabaseField("Spell ID 3", value: item.spellid_3)
-                DatabaseField("Spell Trigger 3", value: item.spelltrigger_3)
-                DatabaseField("Spell Charges 3", value: item.spellcharges_3)
-                DatabaseField("Spell PPM Rate 3", value: item.spellppmrate_3)
-                DatabaseField("Spell Cooldown 3", value: item.spellcooldown_3)
-                DatabaseField("Spell Category 3", value: item.spellcategory_3)
-                DatabaseField("Spell Cat Cooldown 3", value: item.spellcategorycooldown_3)
-
-                DatabaseField("Spell ID 4", value: item.spellid_4)
-                DatabaseField("Spell Trigger 4", value: item.spelltrigger_4)
-                DatabaseField("Spell Charges 4", value: item.spellcharges_4)
-                DatabaseField("Spell PPM Rate 4", value: item.spellppmrate_4)
-                DatabaseField("Spell Cooldown 4", value: item.spellcooldown_4)
-                DatabaseField("Spell Category 4", value: item.spellcategory_4)
-                DatabaseField("Spell Cat Cooldown 4", value: item.spellcategorycooldown_4)
-
-                DatabaseField("Spell ID 5", value: item.spellid_5)
-                DatabaseField("Spell Trigger 5", value: item.spelltrigger_5)
-                DatabaseField("Spell Charges 5", value: item.spellcharges_5)
-                DatabaseField("Spell PPM Rate 5", value: item.spellppmrate_5)
-                DatabaseField("Spell Cooldown 5", value: item.spellcooldown_5)
-                DatabaseField("Spell Category 5", value: item.spellcategory_5)
-                DatabaseField("Spell Cat Cooldown 5", value: item.spellcategorycooldown_5)
-
-                // Misc/Quest/Set Info
+    @ViewBuilder
+    private var miscInfoGrid: some View {
+        VStack(alignment: .leading) {
+            Text("Misc & Quest Info").font(.subheadline).bold()
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 8) {
                 DatabaseField("Page Text", value: item.page_text)
                 DatabaseField("Page Language", value: item.page_language)
                 DatabaseField("Page Material", value: item.page_material)
@@ -694,16 +1219,60 @@ struct ItemDetailView: View {
                 DatabaseField("Extra Flags", value: item.extra_flags)
                 DatabaseField("Other Team Entry", value: item.other_team_entry)
             }
-            .padding(.top, 8)
         }
-        .font(.headline)
-        .foregroundStyle(Color.purple)
+    }
+
+    // MARK: - Field Group Helpers
+
+    @ViewBuilder
+    private func statFields(type: Int?, value: Int?, index: Int) -> some View {
+        if let type = type, let value = value, type != 0 {
+            DatabaseField("Stat Type \(index)", value: type)
+            DatabaseField("Stat Value \(index)", value: value)
+        }
+    }
+
+    @ViewBuilder
+    private func damageFields(min: Double?, max: Double?, type: Int?, index: Int) -> some View {
+        // Accept Double? because underlying model uses Double for damage values
+        if let min = min, let max = max, let type = type, min > 0 || max > 0 {
+            DatabaseField("Damage \(index) Min", value: min)
+            DatabaseField("Damage \(index) Max", value: max)
+            DatabaseField("Damage \(index) Type", value: type)
+        }
+    }
+
+    @ViewBuilder
+    private func spellEffectFields(
+        id: Int?, trigger: Int?, charges: Int?, ppm: Double?, cooldown: Int?, category: Int?,
+        catCooldown: Int?, index: Int
+    ) -> some View {
+        if let id = id, id > 0 {
+            DatabaseField("Spell ID \(index)", value: id)
+            DatabaseField("Spell Trigger \(index)", value: trigger)
+            DatabaseField("Spell Charges \(index)", value: charges)
+            DatabaseField("Spell PPM Rate \(index)", value: ppm)
+            DatabaseField("Spell Cooldown \(index)", value: cooldown)
+            DatabaseField("Spell Category \(index)", value: category)
+            DatabaseField("Spell Cat Cooldown \(index)", value: catCooldown)
+        }
+    }
+
+    private var twoColumnGrid: [GridItem] {
+        [
+            GridItem(.flexible(minimum: 120), alignment: .leading),
+            GridItem(.flexible(minimum: 100), alignment: .leading),
+        ]
     }
 
     // Helper function to check if item has any spell effects
     private func hasSpellEffects() -> Bool {
-        return (item.spellid_1 ?? 0) > 0 || (item.spellid_2 ?? 0) > 0 || (item.spellid_3 ?? 0) > 0
-            || (item.spellid_4 ?? 0) > 0 || (item.spellid_5 ?? 0) > 0
+        if let spellID = item.spellid_1, spellID > 0 { return true }
+        if let spellID = item.spellid_2, spellID > 0 { return true }
+        if let spellID = item.spellid_3, spellID > 0 { return true }
+        if let spellID = item.spellid_4, spellID > 0 { return true }
+        if let spellID = item.spellid_5, spellID > 0 { return true }
+        return false
     }
 
     // Helper view for displaying database fields
