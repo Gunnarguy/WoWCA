@@ -807,43 +807,32 @@ private struct CodeBlock: View {
 // MARK: - Visual Helpers
 extension AboutView {
     fileprivate var appIconVisual: some View {
-        // Attempt to resolve an icon listed in CFBundleIcons; fallback to symbol.
+        // Simplified: show dedicated preview asset if added, else fallback symbol.
         Group {
             #if canImport(UIKit)
-                if let iconName = primaryIconName(), UIImage(named: iconName) != nil {
-                    Image(iconName)
+                if let preview = UIImage(named: "AppIconPreview") {
+                    Image(uiImage: preview)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 92, height: 92)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                        )
-                        .shadow(radius: 5, y: 3)
                 } else {
-                    fallbackSymbol
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 46, weight: .semibold))
+                        .foregroundStyle(.white)
                 }
             #else
-                fallbackSymbol
+                Image(systemName: "sparkles")
+                    .font(.system(size: 46, weight: .semibold))
+                    .foregroundStyle(.white)
             #endif
         }
+        .frame(width: 92, height: 92)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.35), lineWidth: 1)
+        )
+        .shadow(radius: 5, y: 3)
         .accessibilityLabel("App Icon")
-    }
-
-    fileprivate func primaryIconName() -> String? {
-        guard let dict = Bundle.main.infoDictionary?[("CFBundleIcons")] as? [String: Any],
-            let primary = dict["CFBundlePrimaryIcon"] as? [String: Any],
-            let files = primary["CFBundleIconFiles"] as? [String]
-        else { return nil }
-        return files.last
-    }
-
-    private var fallbackSymbol: some View {
-        Image(systemName: "sparkles")
-            .font(.system(size: 46, weight: .semibold))
-            .foregroundStyle(.white)
-            .shadow(radius: 4)
     }
 
     @ViewBuilder

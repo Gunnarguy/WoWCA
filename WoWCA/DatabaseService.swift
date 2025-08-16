@@ -2,15 +2,23 @@
 import Foundation
 import GRDB
 
-@MainActor
+/// Singleton responsible for provisioning the bundled database into
+/// Application Support. Not main-actor isolated to avoid forcing
+/// synchronous hops when accessed from background tasks. Query usage is
+/// funneled through `ItemRepository` actor.
 final class DatabaseService {
     static let shared = DatabaseService()
     private(set) var dbQueue: DatabaseQueue!
     private(set) var dbFileURL: URL?
+    private let configureLock = NSLock()
+    private var isConfigured = false
 
     private init() {}
 
     func configure() throws {
+        configureLock.lock()
+        defer { configureLock.unlock() }
+        guard !isConfigured else { return }
         let dbFileName = "items.sqlite"  // canonical bundled DB
         let fm = FileManager.default
         let appSupport = try fm.url(
@@ -65,5 +73,6 @@ final class DatabaseService {
             print("🗃️ Database loaded: \(itemCount) items, \(ftsCount) FTS entries")
             print("[DB] Opened database (readonly) at: \(targetURL.path)")
         #endif
+        isConfigured = true
     }
 }

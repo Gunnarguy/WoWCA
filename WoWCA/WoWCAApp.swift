@@ -14,7 +14,8 @@ struct WoWCAApp: App {
     init() {
         do {
             try DatabaseService.shared.configure()
-            _vm = State(initialValue: ItemSearchViewModel(dbQueue: DatabaseService.shared.dbQueue))
+            let repo = ItemRepository(dbQueue: DatabaseService.shared.dbQueue)
+            _vm = State(initialValue: ItemSearchViewModel(repository: repo))
         } catch {
             print("DB init failed: \(error)")
         }
