@@ -52,3 +52,29 @@ The project is now in a clean, stable state with:
 - Enhanced UI showing all available item properties
 
 All nerdy WoW Classic item data is now accessible in your app! 🏆
+
+## Version Bumping (App Store Release)
+
+Use the helper script to increment versions prior to a release build.
+
+```
+chmod +x ./bump_version.sh
+./bump_version.sh patch   # or minor / major
+```
+
+This updates:
+- MARKETING_VERSION (user-visible)
+- CURRENT_PROJECT_VERSION (build number)
+
+Then commit and optionally tag:
+
+```
+git commit -am "release: vX.Y.Z"
+git tag vX.Y.Z
+```
+
+Push tags if you want them on GitHub:
+
+```
+git push --follow-tags
+```

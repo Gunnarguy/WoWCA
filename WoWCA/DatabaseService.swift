@@ -6,6 +6,7 @@ import GRDB
 final class DatabaseService {
     static let shared = DatabaseService()
     private(set) var dbQueue: DatabaseQueue!
+    private(set) var dbFileURL: URL?
 
     private init() {}
 
@@ -26,10 +27,13 @@ final class DatabaseService {
                 ])
         }
 
-        print("📦 Bundled DB path: \(bundled.path)")
-        let bundledSize =
-            (try? FileManager.default.attributesOfItem(atPath: bundled.path))?[.size] as? Int64 ?? 0
-        print("📦 Bundled DB size: \(bundledSize) bytes")
+        #if DEBUG
+            print("📦 Bundled DB path: \(bundled.path)")
+            let bundledSize =
+                (try? FileManager.default.attributesOfItem(atPath: bundled.path))?[.size] as? Int64
+                ?? 0
+            print("📦 Bundled DB size: \(bundledSize) bytes")
+        #endif
 
         try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
 
@@ -38,7 +42,10 @@ final class DatabaseService {
             try fm.removeItem(at: targetURL)
         }
         try fm.copyItem(at: bundled, to: targetURL)
-        print("📂 Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
+        #if DEBUG
+            print("📂 Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
+        #endif
+        self.dbFileURL = targetURL
 
         var config = Configuration()
         config.readonly = true
@@ -54,7 +61,9 @@ final class DatabaseService {
         let ftsCount = try dbQueue.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM items_fts") ?? 0
         }
-        print("🗃️ Database loaded: \(itemCount) items, \(ftsCount) FTS entries")
-        print("[DB] Opened database (readonly) at: \(targetURL.path)")
+        #if DEBUG
+            print("🗃️ Database loaded: \(itemCount) items, \(ftsCount) FTS entries")
+            print("[DB] Opened database (readonly) at: \(targetURL.path)")
+        #endif
     }
 }
