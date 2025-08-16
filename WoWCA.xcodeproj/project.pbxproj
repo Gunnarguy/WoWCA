@@ -14,9 +14,22 @@
 		B0E4E0F82E4D568E00265B49 /* WoWCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WoWCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B0BBB70C2E505DC200F5D647 /* Exceptions for "WoWCA" folder in "WoWCA" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B0E4E0F72E4D568E00265B49 /* WoWCA */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B0E4E0FA2E4D568E00265B49 /* WoWCA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B0BBB70C2E505DC200F5D647 /* Exceptions for "WoWCA" folder in "WoWCA" target */,
+			);
 			path = WoWCA;
 			sourceTree = "<group>";
 		};

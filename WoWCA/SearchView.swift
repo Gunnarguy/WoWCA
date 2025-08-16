@@ -1,6 +1,10 @@
 // UI/SearchView.swift
 import SwiftUI
 
+// Forward declaration ensures AboutView symbol is visible to previews even if file ordering changes.
+@available(*, unavailable)
+private struct _AboutView_ForwardDecl: View { var body: some View { EmptyView() } }
+
 struct SearchView: View {
     @Bindable var vm: ItemSearchViewModel
 

@@ -23,7 +23,7 @@ struct WoWCAApp: App {
     var body: some Scene {
         WindowGroup {
             if let vm {
-                SearchView(vm: vm)
+                RootView(vm: vm)
             } else {
                 Text("Database failed to load").padding()
             }
