@@ -52,3 +52,6 @@
 - Rarity-based icon variants
 - Unit tests for DB queries & search filtering
 
+## Transparency
+In-app About screen links to full provenance. See `TRANSPARENCY.md` for exhaustive data/build details.
+
