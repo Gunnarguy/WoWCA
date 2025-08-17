@@ -1,8 +1,19 @@
 import GRDB
 import SwiftUI
 
-// ItemDetailView: cleaned & unified presentation.
-// Sections (quick scan): Header, Spell Effects, Weapon, Armor, Stats (+spell bonuses), Special, Nerd Stats, Elemental, Resistances, Requirements, Pricing, Advanced, All DB Fields, Technical.
+// ItemDetailView: Organized item presentation with logical section ordering
+//
+// Section Order:
+// 1. Header (name, quality, type)
+// 2. Core Character Stats (strength, agility, intellect, etc.)
+// 3. Combat & Damage Stats (weapon damage, armor, block)
+// 4. Secondary Combat Stats (elemental damage, resistances)
+// 5. Magical Effects & Abilities (spell effects, procs)
+// 6. Physical Properties (durability)
+// 7. Requirements & Restrictions
+// 8. Special Item Properties (container, consumable, quest, loot, binding)
+// 9. Economy & Trading (pricing)
+// 10. Advanced Metadata & Developer Info
 struct ItemDetailView: View {
     let item: Item
     @State private var spellBonuses: [String] = []
@@ -17,11 +28,16 @@ struct ItemDetailView: View {
                 headerSection
                     .padding(.bottom, 4)
 
-                // Combat & Usage Data
-                if hasSpellEffects() {
-                    spellEffectsSection
+                // MARK: - Core Character Stats
+                // Primary stats like Strength, Agility, Intellect, Stamina, etc.
+                // Show for ALL items that have stats (including consumables with buffs)
+                if !item.formattedStats.isEmpty || !spellBonuses.isEmpty {
+                    statsSection
                     Divider()
                 }
+
+                // MARK: - Combat & Damage Stats
+                // Weapon damage, armor, defensive stats
                 if item.isWeapon {
                     weaponStatsSection
                     if hasWeaponExtendedInfo() {
@@ -37,14 +53,9 @@ struct ItemDetailView: View {
                     blockSection
                     Divider()
                 }
-                if hasDurabilityInfo() {
-                    durabilitySection
-                    Divider()
-                }
-                if !item.formattedStats.isEmpty || !spellBonuses.isEmpty {
-                    statsSection
-                    Divider()
-                }
+
+                // MARK: - Secondary Combat Stats
+                // Elemental damage types and resistances
                 if !item.secondaryDamageTypes.isEmpty {
                     secondaryDamageSection
                     Divider()
@@ -54,42 +65,63 @@ struct ItemDetailView: View {
                     Divider()
                 }
 
-                // Item Properties & Mechanics
+                // MARK: - Magical Effects & Abilities
+                // Spell effects, procs, and special abilities (ALL item types can have these)
+                if hasSpellEffects() {
+                    spellEffectsSection
+                    Divider()
+                }
                 if specialAbilitiesVisible {
                     specialAbilitiesSection
                     Divider()
                 }
-                if hasContainerProperties() {
-                    containerPropertiesSection
-                    Divider()
-                }
-                if hasConsumableProperties() {
-                    consumablePropertiesSection
-                    Divider()
-                }
-                if hasQuestProperties() {
-                    questPropertiesSection
-                    Divider()
-                }
-                if hasLootProperties() {
-                    lootPropertiesSection
-                    Divider()
-                }
-                if hasBindingProperties() {
-                    bindingPropertiesSection
+
+                // MARK: - Item Properties
+                // Stackability, duration, food/ammo types, etc.
+                if hasItemProperties() {
+                    itemPropertiesSection
                     Divider()
                 }
 
-                // Requirements & Restrictions
+                // MARK: - Physical Properties
+                // Durability and other physical characteristics
+                if hasDurabilityInfo() {
+                    durabilitySection
+                    Divider()
+                }  // MARK: - Requirements & Restrictions
                 requirementsSection
 
-                // Economy & Trading
+                // MARK: - Special Item Properties
+                // Container, consumable, quest, loot, and binding properties
+                if hasContainerProperties() {
+                    Divider()
+                    containerPropertiesSection
+                }
+                if hasConsumableProperties() {
+                    Divider()
+                    consumablePropertiesSection
+                }
+                if hasQuestProperties() {
+                    Divider()
+                    questPropertiesSection
+                }
+                if hasLootProperties() {
+                    Divider()
+                    lootPropertiesSection
+                }
+                if hasBindingProperties() {
+                    Divider()
+                    bindingPropertiesSection
+                }
+
+                // MARK: - Economy & Trading
                 if pricingVisible {
                     Divider()
                     pricingSection
                 }
 
-                // Advanced Metadata
+                // MARK: - Advanced Metadata
+                // Display properties and advanced item metadata
                 if hasAdvancedProperties() {
                     Divider()
                     advancedPropertiesSection
@@ -99,7 +131,8 @@ struct ItemDetailView: View {
                     displayPropertiesSection
                 }
 
-                // Developer & Debug Info
+                // MARK: - Developer & Debug Info
+                // Technical information for debugging and analysis
                 if nerdStatsVisible {
                     Divider()
                     ultimateNerdStatsSection
@@ -157,6 +190,11 @@ struct ItemDetailView: View {
     private func hasBindingProperties() -> Bool {
         return item.bonding != nil || item.area_bound != nil || item.map_bound != nil
             || item.other_team_entry != nil
+    }
+
+    private func hasItemProperties() -> Bool {
+        return item.hasStackSize || item.isTemporary || item.hasProjectileStats
+            || item.food_type != nil
     }
 
     private func hasDisplayProperties() -> Bool {
@@ -360,6 +398,70 @@ struct ItemDetailView: View {
                         Text("Est. Repair Cost:")
                             .foregroundStyle(.secondary)
                         Text("\(estimatedRepairCost) copper")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    @ViewBuilder
+    private var itemPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Item Properties", systemImage: "info.circle.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Stack size for stackable items
+                if let stackString = item.stackSizeString {
+                    HStack {
+                        Image(systemName: "square.stack.3d.up")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Stack Size:")
+                            .foregroundStyle(.secondary)
+                        Text(stackString)
+                            .fontWeight(.medium)
+                    }
+                }
+
+                // Duration for temporary items
+                if let durationString = item.durationString {
+                    HStack {
+                        Image(systemName: "clock")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Duration:")
+                            .foregroundStyle(.secondary)
+                        Text(durationString)
+                            .fontWeight(.medium)
+                    }
+                }
+
+                // Food type for consumables
+                if let foodType = item.food_type, foodType > 0 {
+                    HStack {
+                        Image(systemName: "fork.knife")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Food Type:")
+                            .foregroundStyle(.secondary)
+                        Text("\(foodType)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                // Ammo type for projectiles
+                if let ammoType = item.ammo_type, ammoType > 0 {
+                    HStack {
+                        Image(systemName: "arrow.forward")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Ammo Type:")
+                            .foregroundStyle(.secondary)
+                        Text("\(ammoType)")
                             .fontWeight(.medium)
                     }
                 }

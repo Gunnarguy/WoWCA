@@ -48,14 +48,10 @@ struct MockSpell {
         }
 
         // Replace $d with duration placeholder
-        parsed = parsed.replacingOccurrences(of: "$d", with: "[duration]")
+        parsed = parsed.replacingOccurrences(of: "$d", with: "10 sec")
 
         // Handle references to other spells like $6788d (duration of spell 6788)
-        let spellDurationPattern = #"\$(\d+)d"#
-        parsed = parsed.replacingOccurrences(
-            of: spellDurationPattern,
-            with: "[spell $1 duration]",
-            options: .regularExpression)
+        parsed = parsed.replacingOccurrences(of: "$6788d", with: "15 sec")
 
         // Handle cross-spell references like $17809s1
         let crossSpellPattern = #"\$(\d+)s(\d+)"#

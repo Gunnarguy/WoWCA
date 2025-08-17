@@ -537,6 +537,21 @@ extension Item {
     var itemTypeName: String {
         guard let itemClass = self.class, let subClass = self.subclass else { return "Unknown" }
         switch itemClass {
+        case 0:  // Consumables
+            switch subClass {
+            case 0: return "Food & Drink"
+            case 1: return "Potion"
+            case 2: return "Elixir"
+            case 3: return "Flask"
+            case 4: return "Scroll"
+            case 5: return "Food"
+            case 6: return "Item Enhancement"
+            case 7: return "Bandage"
+            case 8: return "Other"
+            default: return "Consumable"
+            }
+        case 1:  // Containers
+            return "Container"
         case 2:  // Weapon
             switch subClass {
             case 0: return "Axe"
@@ -563,6 +578,27 @@ extension Item {
             case 5: return "Shield"
             default: return "Armor"
             }
+        case 5:  // Reagents
+            return "Reagent"
+        case 6:  // Projectiles
+            switch subClass {
+            case 1: return "Arrow"
+            case 2: return "Bullet"
+            case 3: return "Thrown"
+            default: return "Projectile"
+            }
+        case 7:  // Trade Goods
+            return "Trade Good"
+        case 9:  // Recipe/Book
+            return "Recipe"
+        case 11:  // Quiver
+            return "Quiver"
+        case 12:  // Quest Item
+            return "Quest Item"
+        case 13:  // Key
+            return "Key"
+        case 15:  // Miscellaneous
+            return "Miscellaneous"
         default:
             return "Item"
         }
@@ -574,6 +610,53 @@ extension Item {
 
     var hasArmor: Bool {
         return armor ?? 0 > 0
+    }
+
+    var isConsumable: Bool {
+        return self.class == 0
+    }
+
+    var isContainer: Bool {
+        return self.class == 1
+    }
+
+    var isProjectile: Bool {
+        return self.class == 6
+    }
+
+    var isQuestItem: Bool {
+        return self.class == 12
+    }
+
+    // Additional properties for better item handling
+    var hasStackSize: Bool {
+        return stackable != nil && stackable! > 1
+    }
+
+    var stackSizeString: String? {
+        guard let stackable = stackable, stackable > 1 else { return nil }
+        return "Stack: \(stackable)"
+    }
+
+    var hasProjectileStats: Bool {
+        return isProjectile && ammo_type != nil
+    }
+
+    var isTemporary: Bool {
+        return duration != nil && duration! > 0
+    }
+
+    var durationString: String? {
+        guard let duration = duration, duration > 0 else { return nil }
+        if duration >= 3600 {
+            let hours = duration / 3600
+            return "\(hours) hour\(hours == 1 ? "" : "s")"
+        } else if duration >= 60 {
+            let minutes = duration / 60
+            return "\(minutes) minute\(minutes == 1 ? "" : "s")"
+        } else {
+            return "\(duration) second\(duration == 1 ? "" : "s")"
+        }
     }
 
     var formattedStats: [String] {
