@@ -807,11 +807,21 @@ private struct CodeBlock: View {
 // MARK: - Visual Helpers
 extension AboutView {
     fileprivate var appIconVisual: some View {
-        // Simplified: show dedicated preview asset if added, else fallback symbol.
+        // Display the actual app icon from the bundle
         Group {
             #if canImport(UIKit)
-                if let preview = UIImage(named: "AppIconPreview") {
-                    Image(uiImage: preview)
+                if let appIcon = getAppIcon() {
+                    Image(uiImage: appIcon)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 46, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            #elseif canImport(AppKit)
+                if let appIcon = NSApp.applicationIconImage {
+                    Image(nsImage: appIcon)
                         .resizable()
                         .scaledToFit()
                 } else {
@@ -906,6 +916,27 @@ extension AboutView {
         fileprivate func prepareAndShareDiagnostics() {
             diagnosticsText = buildDiagnostics()
             showShareSheet = true
+        }
+
+        // Helper function to get the app icon from the bundle
+        fileprivate func getAppIcon() -> UIImage? {
+            // First try to access the AppIcon directly from the asset catalog
+            if let appIcon = UIImage(named: "AppIcon") {
+                return appIcon
+            }
+
+            // Alternative: try to get icon from bundle info and manually construct
+            guard
+                let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"]
+                    as? [String: Any],
+                let primaryIcon = iconsDictionary["CFBundlePrimaryIcon"] as? [String: Any],
+                let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+                let lastIcon = iconFiles.last
+            else {
+                return nil
+            }
+
+            return UIImage(named: lastIcon)
         }
     #endif
 }

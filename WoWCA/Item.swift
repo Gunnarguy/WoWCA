@@ -578,15 +578,35 @@ extension Item {
 
     var formattedStats: [String] {
         var stats: [String] = []
+        let allStats = [
+            (stat_type1, stat_value1), (stat_type2, stat_value2), (stat_type3, stat_value3),
+            (stat_type4, stat_value4), (stat_type5, stat_value5), (stat_type6, stat_value6),
+            (stat_type7, stat_value7), (stat_type8, stat_value8), (stat_type9, stat_value9),
+            (stat_type10, stat_value10),
+        ]
         let statMap: [Int: String] = [
-            1: "Health", 3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit", 7: "Stamina",
+            1: "Health", 2: "Mana", 3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit",
+            7: "Stamina",
+            8: "Weapon Skill", 12: "Defense Rating", 13: "Dodge Rating", 14: "Parry Rating",
+            15: "Block Rating",
+            16: "Hit Rating (Melee)", 17: "Hit Rating (Ranged)", 18: "Hit Rating (Spell)",
+            19: "Crit Rating (Melee)", 20: "Crit Rating (Ranged)", 21: "Crit Rating (Spell)",
+            22: "Hit Avoidance", 23: "Crit Avoidance", 24: "Hit Taken (Melee)",
+            25: "Hit Taken (Ranged)",
+            26: "Hit Taken (Spell)", 27: "Crit Taken (Melee)", 28: "Crit Taken (Ranged)",
+            29: "Crit Taken (Spell)",
+            30: "Haste Rating", 31: "Spell Penetration", 32: "Attack Power",
+            33: "Ranged Attack Power",
+            34: "Feral Attack Power", 35: "Spell Healing", 36: "Spell Damage",
+            37: "Mana Regeneration",
+            38: "Armor Penetration", 39: "Spell Power", 40: "Health Regen", 41: "Spell Penetration",
+            42: "Block Value", 43: "Mastery Rating", 44: "Armor", 45: "Fire Resistance",
+            46: "Frost Resistance", 47: "Holy Resistance", 48: "Shadow Resistance",
+            49: "Nature Resistance", 50: "Arcane Resistance",
         ]
 
-        for i in 1...10 {
-            if let type = self.value(forKey: "stat_type\(i)") as? Int,
-                let value = self.value(forKey: "stat_value\(i)") as? Int,
-                value != 0, let statName = statMap[type]
-            {
+        for (type, value) in allStats {
+            if let type = type, let value = value, value != 0, let statName = statMap[type] {
                 stats.append("+\(value) \(statName)")
             }
         }
@@ -595,30 +615,6 @@ extension Item {
 
     var formattedSpellBonuses: [String] {
         return spells.flatMap { $0.spellBonuses }
-    }
-
-    // Method to load spells from the database and populate spell bonuses
-    func loadSpells() async -> [String] {
-        guard let queue = DatabaseService.shared.dbQueue else {
-            return []
-        }
-
-        let spellIds = allSpellEffects.map { $0.spellId }
-        guard !spellIds.isEmpty else {
-            return []
-        }
-
-        do {
-            let loadedSpells: [Spell] = try await queue.read { db in
-                try Spell.filter(spellIds.contains(Column("entry"))).fetchAll(db)
-            }
-
-            // Extract spell bonuses directly without modifying the item
-            return loadedSpells.flatMap { $0.spellBonuses }
-        } catch {
-            print("❌ Error loading spells for item \(entry): \(error)")
-            return []
-        }
     }
 
     var hasSpellEffects: Bool {
@@ -650,12 +646,15 @@ extension Item {
 
     var secondaryDamageTypes: [String] {
         var damages: [String] = []
-        for i in 2...5 {
-            if let minDmg = self.value(forKey: "dmg_min\(i)") as? Double,
-                let maxDmg = self.value(forKey: "dmg_max\(i)") as? Double,
-                let type = self.value(forKey: "dmg_type\(i)") as? Int,
-                minDmg > 0 || maxDmg > 0
-            {
+        let allDamages = [
+            (dmg_min2, dmg_max2, dmg_type2),
+            (dmg_min3, dmg_max3, dmg_type3),
+            (dmg_min4, dmg_max4, dmg_type4),
+            (dmg_min5, dmg_max5, dmg_type5),
+        ]
+
+        for (minDmg, maxDmg, type) in allDamages {
+            if let minDmg = minDmg, let maxDmg = maxDmg, let type = type, minDmg > 0 || maxDmg > 0 {
                 let typeName = damageTypeName(for: type)
                 damages.append("+\(Int(minDmg))-\(Int(maxDmg)) \(typeName) Damage")
             }
@@ -707,10 +706,5 @@ extension Item {
         case 6: return "Arcane"
         default: return "Physical"
         }
-    }
-
-    private func value(forKey key: String) -> Any? {
-        let mirror = Mirror(reflecting: self)
-        return mirror.children.first { $0.label == key }?.value
     }
 }
