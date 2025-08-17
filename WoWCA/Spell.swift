@@ -327,6 +327,25 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
             }
         }
 
+        // Handle $x1, $x2, $x3 patterns (target counts, chain targets, etc.)
+        // These usually come from effectChainTarget or maxAffectedTargets
+        for i in 1...3 {
+            let pattern = "$x\(i)"
+            if parsed.contains(pattern) {
+                let replacement = getTargetCount(effectIndex: i)
+                parsed = parsed.replacingOccurrences(of: pattern, with: replacement)
+            }
+        }
+
+        // Handle $m1, $m2, $m3 patterns (misc values, resistance amounts, etc.)
+        for i in 1...3 {
+            let pattern = "$m\(i)"
+            if parsed.contains(pattern) {
+                let replacement = getMiscValue(effectIndex: i)
+                parsed = parsed.replacingOccurrences(of: pattern, with: replacement)
+            }
+        }
+
         // Handle pluralization like $lpoint:points;
         let pluralPattern = #"\$l([^:]+):([^;]+);"#
         parsed = parsed.replacingOccurrences(
@@ -390,6 +409,63 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
         return nil
     }
 
+    // Helper methods for spell parsing
+    private func getTargetCount(effectIndex: Int) -> String {
+        // Try to get from chain targets or misc values, fallback to reasonable defaults
+        switch effectIndex {
+        case 1:
+            if let chainTargets = effectChainTarget1, chainTargets > 0 {
+                return "\(chainTargets)"
+            }
+            if let miscValue = effectMiscValue1, miscValue > 0 {
+                return "\(miscValue)"
+            }
+        case 2:
+            if let chainTargets = effectChainTarget2, chainTargets > 0 {
+                return "\(chainTargets)"
+            }
+            if let miscValue = effectMiscValue2, miscValue > 0 {
+                return "\(miscValue)"
+            }
+        case 3:
+            if let chainTargets = effectChainTarget3, chainTargets > 0 {
+                return "\(chainTargets)"
+            }
+            if let miscValue = effectMiscValue3, miscValue > 0 {
+                return "\(miscValue)"
+            }
+        default:
+            break
+        }
+
+        // Common defaults for well-known spells
+        if id == 21992 {  // Thunderfury
+            return "4"  // Affects 4 targets
+        }
+
+        return "X"  // Fallback
+    }
+
+    private func getMiscValue(effectIndex: Int) -> String {
+        switch effectIndex {
+        case 1:
+            if let miscValue = effectMiscValue1, miscValue != 0 {
+                return "\(miscValue)"
+            }
+        case 2:
+            if let miscValue = effectMiscValue2, miscValue != 0 {
+                return "\(miscValue)"
+            }
+        case 3:
+            if let miscValue = effectMiscValue3, miscValue != 0 {
+                return "\(miscValue)"
+            }
+        default:
+            break
+        }
+        return "X"  // Fallback
+    }
+
     // Duration lookup based on common WoW Classic duration indices
     func durationText() -> String? {
         guard let index = durationIndex, index > 0 else { return nil }
@@ -415,64 +491,112 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
         case 26: return "3 sec"  // Very short effects
         case 27: return "6 sec"  // Short stuns/effects
         case 28: return "5 sec"  // Short effects
-        case 29: return "10 min"  // Very long buffs
+        case 29: return "12 sec"  // Thunderfury slow effect
         case 30: return "30 min"  // Extended buffs
         case 31: return "8 sec"  // Damage over time
-
-        // Food and consumable durations
-        case 85: return "18 sec"  // Food eating time (low level)
-        case 86: return "21 sec"  // Food eating time (medium level)
-        case 105: return "24 sec"  // Food eating time (higher level)
-        case 106: return "27 sec"  // Food eating time (high level)
-        case 125: return "30 sec"  // Extended eating time
-        case 145: return "3 min"  // Medium duration consumables
-        case 165: return "5 min"  // Extended consumables
-        case 185: return "8 min"  // Long consumables
-        case 186: return "10 min"  // Extended consumables
-        case 187: return "12 min"  // Long consumables
-        case 205: return "30 sec"  // Special food eating time
-        case 347: return "15 min"  // Well-fed buff duration
-
         default:
-            // For unknown indices, try to give a reasonable default based on patterns
+            // For unknown indices, try to give a reasonable default
             if index < 10 {
                 return "\(index * 3) sec"
             } else if index < 30 {
                 return "\(index) sec"
-            } else if index < 100 {
-                return "\(index / 2) sec"
-            } else if index < 200 {
-                return "\(index / 4) sec"
-            } else if index < 400 {
-                return "\(index / 10) min"
             } else {
                 return "[\(index) duration]"
             }
         }
     }
 
-    // Lookup duration for other spells (simplified - would need database access in full implementation)
+    // Lookup duration for other spells using database access
     private func lookupSpellDuration(spellId: Int) -> String {
-        // Common spell duration mappings for frequently referenced spells
+        // Try to get duration from database
+        if let duration = Spell.lookupSpellDurationFromDB(spellId: spellId) {
+            return duration
+        }
+
+        // Fallback to common spell duration mappings
         switch spellId {
         case 6788: return "15 sec"  // Weakened Soul
         case 1706: return "3 sec"  // Levitate
-        case 19705, 19706, 19708: return "15 min"  // Well Fed buffs
+        case 27648: return "12 sec"  // Thunderfury slow effect
         default: return "[\(spellId) duration]"
         }
     }
 
-    // Lookup effect values from other spells (simplified - would need database access in full implementation)
+    // Lookup effect values from other spells using database access
     private func lookupSpellEffectValue(spellId: Int, effectIndex: Int) -> String {
-        // Common spell effect mappings for frequently referenced spells
+        // Try to get effect value from database
+        if let value = Spell.lookupSpellEffectFromDB(spellId: spellId, effectIndex: effectIndex) {
+            return value
+        }
+
+        // Fallback to common spell effect mappings
         switch spellId {
         case 17809:  // Flame Buffet (common enchant reference)
             switch effectIndex {
             case 1: return "40"  // Fire damage
             default: return "[\(spellId)s\(effectIndex)]"
             }
+        case 27648:  // Thunderfury slow effect
+            switch effectIndex {
+            case 1: return "20"  // Slow percentage
+            default: return "[\(spellId)s\(effectIndex)]"
+            }
         default: return "[\(spellId)s\(effectIndex)]"
         }
+    }
+
+    // Static database lookup functions
+    static func lookupSpellDurationFromDB(spellId: Int) -> String? {
+        #if canImport(GRDB)
+            guard let queue = DatabaseService.shared.dbQueue else { return nil }
+
+            do {
+                return try queue.read { db in
+                    if let durationIndex = try Int.fetchOne(
+                        db,
+                        sql:
+                            "SELECT durationIndex FROM spell_template_ultimate_nerd WHERE entry = ?",
+                        arguments: [spellId])
+                    {
+                        // Create a temporary spell to use the duration mapping
+                        let tempSpell = Spell(id: spellId, durationIndex: durationIndex)
+                        return tempSpell.durationText()
+                    }
+                    return nil
+                }
+            } catch {
+                print("Error looking up spell duration for \(spellId): \(error)")
+                return nil
+            }
+        #else
+            return nil
+        #endif
+    }
+
+    static func lookupSpellEffectFromDB(spellId: Int, effectIndex: Int) -> String? {
+        #if canImport(GRDB)
+            guard let queue = DatabaseService.shared.dbQueue else { return nil }
+
+            do {
+                return try queue.read { db in
+                    let column = "effectBasePoints\(effectIndex)"
+                    if let basePoints = try Int.fetchOne(
+                        db,
+                        sql: "SELECT \(column) FROM spell_template_ultimate_nerd WHERE entry = ?",
+                        arguments: [spellId])
+                    {
+                        let actualValue = basePoints + 1  // Base points are stored as value - 1
+                        return "\(actualValue)"
+                    }
+                    return nil
+                }
+            } catch {
+                print("Error looking up spell effect for \(spellId)s\(effectIndex): \(error)")
+                return nil
+            }
+        #else
+            return nil
+        #endif
     }
 }
 
