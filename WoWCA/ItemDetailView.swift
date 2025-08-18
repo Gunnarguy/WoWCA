@@ -169,17 +169,21 @@ struct ItemDetailView: View {
     }
 
     private func hasContainerProperties() -> Bool {
-        return (item.container_slots != nil && item.container_slots! > 0)
-            || (item.bag_family != nil && item.bag_family! > 0)
-            || (item.max_count != nil && item.max_count! > 1)
+        // Only show container properties for actual containers
+        return item.isContainer
+            && ((item.container_slots != nil && item.container_slots! > 0)
+                || (item.bag_family != nil && item.bag_family! > 0)
+                || (item.max_count != nil && item.max_count! > 1))
     }
 
     private func hasConsumableProperties() -> Bool {
-        return item.food_type != nil || item.duration != nil
+        // Only show consumable properties for actual consumables
+        return item.isConsumable && (item.food_type != nil || item.duration != nil)
     }
 
     private func hasQuestProperties() -> Bool {
-        return item.start_quest != nil || item.page_text != nil
+        // Show quest properties for quest items OR any item that starts a quest
+        return item.isQuestItem || item.start_quest != nil || item.page_text != nil
     }
 
     private func hasLootProperties() -> Bool {
@@ -194,7 +198,7 @@ struct ItemDetailView: View {
 
     private func hasItemProperties() -> Bool {
         return item.hasStackSize || item.isTemporary || item.hasProjectileStats
-            || item.food_type != nil
+            || (item.isConsumable && item.food_type != nil)
     }
 
     private func hasDisplayProperties() -> Bool {
@@ -525,9 +529,9 @@ struct ItemDetailView: View {
                         Text(classNames(for: allowableClass))
                             .fontWeight(.medium)
                     }
-                }
-
-                if let allowableRace = item.allowable_race, allowableRace != -1 {
+                } else if let allowableRace = item.allowable_race, allowableRace != -1 {
+                    // Only show race restrictions if there are no class restrictions
+                    // since class restrictions are more specific and make race restrictions redundant
                     HStack {
                         Text("Races:")
                             .foregroundStyle(.secondary)
