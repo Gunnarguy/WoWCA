@@ -1,8 +1,12 @@
 // UI/ItemRowView.swift
 import SwiftUI
+import os.log
 
 struct ItemRowView: View {
     let item: Item
+
+    // Logger for row view events
+    private let logger = Logger(subsystem: "com.wowca.app", category: "ItemRow")
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -70,6 +74,14 @@ struct ItemRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .onAppear {
+            logger.info("👁️ ItemRowView appeared for item [\(item.entry)] \(item.name)")
+            print("👁️ Row appeared: [\(item.entry)] \(item.name) (Quality: \(item.quality))")
+        }
+        .onTapGesture {
+            logger.info("👆 ItemRowView tapped for item [\(item.entry)] \(item.name)")
+            print("👆 Row tapped: [\(item.entry)] \(item.name)")
+        }
     }
 
     @ViewBuilder

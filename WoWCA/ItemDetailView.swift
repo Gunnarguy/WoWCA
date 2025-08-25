@@ -1,5 +1,6 @@
 import GRDB
 import SwiftUI
+import os.log
 
 // ItemDetailView: Organized item presentation with logical section ordering
 //
@@ -22,17 +23,28 @@ struct ItemDetailView: View {
     @State private var isLoadingSpells = false
     @State private var spellLoadError: String? = nil
 
+    // Logger for detail view events
+    private let logger = Logger(subsystem: "com.wowca.app", category: "ItemDetail")
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headerSection
                     .padding(.bottom, 4)
+                    .onAppear {
+                        logger.info("📰 Header section appeared for item [\(item.entry)]")
+                        print("📰 Item header loaded: [\(item.entry)] \(item.name)")
+                    }
 
                 // MARK: - Core Character Stats
                 // Primary stats like Strength, Agility, Intellect, Stamina, etc.
                 // Show for ALL items that have stats (including consumables with buffs)
                 if !item.formattedStats.isEmpty || !spellBonuses.isEmpty {
                     statsSection
+                        .onAppear {
+                            logger.info("📊 Stats section appeared")
+                            print("📊 Showing stats section")
+                        }
                     Divider()
                 }
 
@@ -40,17 +52,33 @@ struct ItemDetailView: View {
                 // Weapon damage, armor, defensive stats
                 if item.isWeapon {
                     weaponStatsSection
+                        .onAppear {
+                            logger.info("⚔️ Weapon stats section appeared")
+                            print("⚔️ Showing weapon stats")
+                        }
                     if hasWeaponExtendedInfo() {
                         weaponExtendedSection
+                            .onAppear {
+                                logger.info("⚔️ Extended weapon info appeared")
+                                print("⚔️ Showing extended weapon info")
+                            }
                     }
                     Divider()
                 }
                 if item.hasArmor {
                     armorSection
+                        .onAppear {
+                            logger.info("🛡️ Armor section appeared")
+                            print("🛡️ Showing armor stats")
+                        }
                     Divider()
                 }
                 if hasBlockInfo() {
                     blockSection
+                        .onAppear {
+                            logger.info("🛡️ Block info section appeared")
+                            print("🛡️ Showing block stats")
+                        }
                     Divider()
                 }
 
@@ -145,7 +173,32 @@ struct ItemDetailView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
-        .task { await loadSpellBonuses() }
+        .task {
+            logger.info("🚀 ItemDetailView task started - loading spell bonuses for [\(item.entry)]")
+            print("🚀 Loading spell bonuses for item [\(item.entry)] \(item.name)")
+            await loadSpellBonuses()
+        }
+        .onAppear {
+            logger.info("👁️ ItemDetailView appeared for item [\(item.entry)] \(item.name)")
+            print("👁️ ItemDetailView appeared: [\(item.entry)] \(item.name)")
+            print("📋 Item details:")
+            print("  🏷️ Name: \(item.name)")
+            print("  🆔 Entry: \(item.entry)")
+            print("  ⭐ Quality: \(item.quality)")
+            print("  📊 Level: \(item.item_level ?? 0)")
+            print("  💰 Buy: \(item.buy_price ?? 0) copper")
+            print("  💰 Sell: \(item.sell_price ?? 0) copper")
+            if item.isWeapon {
+                print("  ⚔️ Weapon: \(item.dmg_min1 ?? 0)-\(item.dmg_max1 ?? 0) damage")
+            }
+            if item.hasArmor {
+                print("  🛡️ Armor: \(item.armor ?? 0)")
+            }
+        }
+        .onDisappear {
+            logger.info("👋 ItemDetailView disappeared for item [\(item.entry)] \(item.name)")
+            print("👋 ItemDetailView disappeared: [\(item.entry)] \(item.name)")
+        }
     }
 
     private var specialAbilitiesVisible: Bool {
@@ -248,21 +301,74 @@ struct ItemDetailView: View {
 
     // MARK: Spell bonus loading
     private func loadSpellBonuses() async {
-        guard spellBonuses.isEmpty && !isLoadingSpellBonuses else { return }
-        isLoadingSpellBonuses = true
-        defer { isLoadingSpellBonuses = false }
-        if !item.spells.isEmpty {  // already enriched
-            spellBonuses = item.formattedSpellBonuses
+        logger.info("🪄 loadSpellBonuses() called for item [\(item.entry)]")
+        print("🪄 Starting spell bonus loading for [\(item.entry)] \(item.name)")
+
+        guard spellBonuses.isEmpty && !isLoadingSpellBonuses else {
+            logger.info("⚠️ Spell bonuses already loaded or loading in progress")
+            print("⚠️ Spell bonuses already loaded or loading, skipping")
             return
         }
+
+        isLoadingSpellBonuses = true
+        logger.info("🔄 Set isLoadingSpellBonuses = true")
+        print("🔄 Spell loading state: STARTED")
+
+        defer {
+            isLoadingSpellBonuses = false
+            logger.info("🔄 Set isLoadingSpellBonuses = false")
+            print("🔄 Spell loading state: FINISHED")
+        }
+
+        if !item.spells.isEmpty {  // already enriched
+            logger.info("✅ Item already has \(item.spells.count) enriched spells")
+            print("✅ Item already enriched with \(item.spells.count) spells")
+            spellBonuses = item.formattedSpellBonuses
+            logger.info("📋 Extracted \(spellBonuses.count) spell bonuses from enriched spells")
+            print("📋 Extracted \(spellBonuses.count) spell bonuses")
+            return
+        }
+
         let ids = item.allSpellEffects.map { $0.spellId }
-        guard !ids.isEmpty, let queue = DatabaseService.shared.dbQueue else { return }
+        logger.info("🔍 Found \(ids.count) spell effect IDs: \(ids)")
+        print("🔍 Spell effect IDs to load: \(ids)")
+
+        guard !ids.isEmpty, let queue = DatabaseService.shared.dbQueue else {
+            logger.info("⚠️ No spell IDs to load or no database queue available")
+            print("⚠️ No spell IDs or no database queue")
+            return
+        }
+
         do {
+            logger.info("🗄️ Querying database for spells...")
+            print("🗄️ Loading spells from database...")
+
             let spells: [Spell] = try await queue.read { db in
-                try Spell.filter(ids.contains(Column("entry"))).fetchAll(db)
+                let spells = try Spell.filter(ids.contains(Column("entry"))).fetchAll(db)
+                print("🗄️ Database query returned \(spells.count) spells")
+                return spells
             }
+
+            logger.info("✅ Loaded \(spells.count) spells from database")
+            print("✅ Loaded \(spells.count) spells")
+
+            for spell in spells {
+                print("  🔮 Spell [\(spell.id)]: \(spell.name1 ?? "Unknown")")
+            }
+
             spellBonuses = spells.flatMap { $0.spellBonuses }
-        } catch { print("Spell bonus load failed: \(error)") }
+            logger.info("📋 Generated \(spellBonuses.count) total spell bonuses")
+            print("📋 Generated \(spellBonuses.count) spell bonuses:")
+
+            for (index, bonus) in spellBonuses.enumerated() {
+                print("  \(index + 1). \(bonus)")
+            }
+
+        } catch {
+            logger.error("❌ Spell bonus loading failed: \(error.localizedDescription)")
+            print("❌ Spell bonus load failed: \(error)")
+            print("❌ Error details: \(String(describing: error))")
+        }
     }
 
     @ViewBuilder
