@@ -13,10 +13,10 @@
 		072F28242E7B5421006E2616 /* Spell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28232E7B5421006E2616 /* Spell.swift */; };
 		072F28262E7B5421006E2616 /* WoWCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28252E7B5421006E2616 /* WoWCAApp.swift */; };
 		072F28282E7B5421006E2616 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 072F28272E7B5421006E2616 /* Assets.xcassets */; };
-		072F282A2E7B5421006E2616 /* items.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 072F28292E7B5421006E2616 /* items.sqlite */; };
 		072F282C2E7B5421006E2616 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */; };
 		072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */; };
 		B0E4E11A2E4D5BE400265B49 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = B0E4E1192E4D5BE400265B49 /* GRDB */; };
+		B0F51C2C2E5D4EB7008E0AF1 /* items.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = B0F51C2B2E5D4EB7008E0AF1 /* items.sqlite */; };
 		C1A6465A0000000000000001 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000000 /* AboutView.swift */; };
 		C1A6465A0000000000000003 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000002 /* AppLogger.swift */; };
 		C1A6465A0000000000000005 /* DatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000004 /* DatabaseService.swift */; };
@@ -33,10 +33,10 @@
 		072F28232E7B5421006E2616 /* Spell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spell.swift; sourceTree = "<group>"; };
 		072F28252E7B5421006E2616 /* WoWCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WoWCAApp.swift; sourceTree = "<group>"; };
 		072F28272E7B5421006E2616 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		072F28292E7B5421006E2616 /* items.sqlite */ = {isa = PBXFileReference; lastKnownFileType = data.sqlite; path = items.sqlite; sourceTree = "<group>"; };
 		072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewEnhanced.swift; sourceTree = "<group>"; };
 		B0E4E0F82E4D568E00265B49 /* WoWCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WoWCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0F51C2B2E5D4EB7008E0AF1 /* items.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = items.sqlite; sourceTree = "<group>"; };
 		C1A6465A0000000000000000 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000002 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000004 /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
@@ -76,9 +76,9 @@
 				072F28232E7B5421006E2616 /* Spell.swift */,
 				072F28252E7B5421006E2616 /* WoWCAApp.swift */,
 				072F28272E7B5421006E2616 /* Assets.xcassets */,
-				072F28292E7B5421006E2616 /* items.sqlite */,
 				072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */,
 				C1A6465A0000000000000016 /* Info.plist */,
+				B0F51C2B2E5D4EB7008E0AF1 /* items.sqlite */,
 			);
 			path = WoWCA;
 			sourceTree = "<group>";
@@ -163,8 +163,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B0F51C2C2E5D4EB7008E0AF1 /* items.sqlite in Resources */,
 				072F28282E7B5421006E2616 /* Assets.xcassets in Resources */,
-				072F282A2E7B5421006E2616 /* items.sqlite in Resources */,
 				072F282C2E7B5421006E2616 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
