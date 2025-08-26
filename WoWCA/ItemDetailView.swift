@@ -172,7 +172,9 @@ struct ItemDetailView: View {
             }
             .padding()
         }
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .task {
             logger.info("🚀 ItemDetailView task started - loading spell bonuses for [\(item.entry)]")
             print("🚀 Loading spell bonuses for item [\(item.entry)] \(item.name)")
@@ -1357,7 +1359,7 @@ struct ItemDetailView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
         .onAppear { ensureSpellsLoaded() }
     }
@@ -2148,25 +2150,6 @@ struct ItemDetailView: View {
                     .foregroundStyle(.primary)
             }
             .padding(.vertical, 2)
-        }
-    }
-}
-
-struct NerdStat<T: CustomStringConvertible>: View {
-    let label: String
-    let value: T?
-
-    var body: some View {
-        if let value = value {
-            HStack {
-                Text(label + ":")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value.description)
-                    .font(.caption.monospaced())
-                    .fontWeight(.medium)
-                    .textSelection(.enabled)
-            }
         }
     }
 }

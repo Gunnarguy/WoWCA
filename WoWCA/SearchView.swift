@@ -55,15 +55,15 @@ struct SearchView: View {
                         }
                     }
                     .navigationDestination(for: Item.self) { item in
-                        ItemDetailView(item: item)
+                        ItemDetailViewEnhanced(item: item)
                             .onAppear {
                                 logger.info(
-                                    "📱 ItemDetailView appeared for: [\(item.entry)] \(item.name)")
+                                    "📱 ItemDetailViewEnhanced appeared for: [\(item.entry)] \(item.name)")
                                 print("📱 Detail view opened: [\(item.entry)] \(item.name)")
                             }
                             .onDisappear {
                                 logger.info(
-                                    "👋 ItemDetailView disappeared for: [\(item.entry)] \(item.name)"
+                                    "👋 ItemDetailViewEnhanced disappeared for: [\(item.entry)] \(item.name)"
                                 )
                                 print("👋 Detail view closed: [\(item.entry)] \(item.name)")
                             }
@@ -83,12 +83,12 @@ struct SearchView: View {
                 logger.info("👋 SearchView disappeared")
                 print("👋 SearchView disappeared")
             }
-        }
-        .searchable(text: $vm.query, prompt: "Search by name")
-        .onChange(of: vm.query) { oldValue, newValue in
-            logger.info("📝 Search text changed from '\(oldValue)' to '\(newValue)'")
-            print("📝 Search input: '\(oldValue)' -> '\(newValue)'")
-            vm.updateQuery(newValue)
+            .searchable(text: $vm.query, prompt: "Search by name")
+            .onChange(of: vm.query) { oldValue, newValue in
+                logger.info("📝 Search text changed from '\(oldValue)' to '\(newValue)'")
+                print("📝 Search input: '\(oldValue)' -> '\(newValue)'")
+                vm.updateQuery(newValue)
+            }
         }
         .onAppear {
             logger.info("🔍 SearchView with NavigationStack appeared")

@@ -3,37 +3,51 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		072F281E2E7B5421006E2616 /* LicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F281D2E7B5421006E2616 /* LicensesView.swift */; };
+		072F28202E7B5421006E2616 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F281F2E7B5421006E2616 /* RootView.swift */; };
+		072F28222E7B5421006E2616 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28212E7B5421006E2616 /* SearchView.swift */; };
+		072F28242E7B5421006E2616 /* Spell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28232E7B5421006E2616 /* Spell.swift */; };
+		072F28262E7B5421006E2616 /* WoWCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28252E7B5421006E2616 /* WoWCAApp.swift */; };
+		072F28282E7B5421006E2616 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 072F28272E7B5421006E2616 /* Assets.xcassets */; };
+		072F282A2E7B5421006E2616 /* items.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 072F28292E7B5421006E2616 /* items.sqlite */; };
+		072F282C2E7B5421006E2616 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */; };
+		072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */; };
 		B0E4E11A2E4D5BE400265B49 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = B0E4E1192E4D5BE400265B49 /* GRDB */; };
+		C1A6465A0000000000000001 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000000 /* AboutView.swift */; };
+		C1A6465A0000000000000003 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000002 /* AppLogger.swift */; };
+		C1A6465A0000000000000005 /* DatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000004 /* DatabaseService.swift */; };
+		C1A6465A0000000000000007 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000006 /* Item.swift */; };
+		C1A6465A0000000000000009 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000008 /* ItemDetailView.swift */; };
+		C1A6465A0000000000000011 /* ItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000010 /* ItemRepository.swift */; };
+		C1A6465A0000000000000013 /* ItemRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000012 /* ItemRowView.swift */; };
+		C1A6465A0000000000000015 /* ItemSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000014 /* ItemSearchViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		072F281D2E7B5421006E2616 /* LicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesView.swift; sourceTree = "<group>"; };
+		072F281F2E7B5421006E2616 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		072F28212E7B5421006E2616 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		072F28232E7B5421006E2616 /* Spell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spell.swift; sourceTree = "<group>"; };
+		072F28252E7B5421006E2616 /* WoWCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WoWCAApp.swift; sourceTree = "<group>"; };
+		072F28272E7B5421006E2616 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		072F28292E7B5421006E2616 /* items.sqlite */ = {isa = PBXFileReference; lastKnownFileType = data.sqlite; path = items.sqlite; sourceTree = "<group>"; };
+		072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewEnhanced.swift; sourceTree = "<group>"; };
 		B0E4E0F82E4D568E00265B49 /* WoWCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WoWCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1A6465A0000000000000000 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000002 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000004 /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000006 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000008 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000010 /* ItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRepository.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000012 /* ItemRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRowView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000014 /* ItemSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSearchViewModel.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B0BBB70C2E505DC200F5D647 /* Exceptions for "WoWCA" folder in "WoWCA" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = B0E4E0F72E4D568E00265B49 /* WoWCA */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		B0E4E0FA2E4D568E00265B49 /* WoWCA */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B0BBB70C2E505DC200F5D647 /* Exceptions for "WoWCA" folder in "WoWCA" target */,
-			);
-			path = WoWCA;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B0E4E0F52E4D568E00265B49 /* Frameworks */ = {
@@ -47,10 +61,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		072F281C2E7B5421006E2616 /* WoWCA */ = {
+			isa = PBXGroup;
+			children = (
+				C1A6465A0000000000000000 /* AboutView.swift */,
+				C1A6465A0000000000000002 /* AppLogger.swift */,
+				C1A6465A0000000000000004 /* DatabaseService.swift */,
+				C1A6465A0000000000000006 /* Item.swift */,
+				C1A6465A0000000000000008 /* ItemDetailView.swift */,
+				072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */,
+				C1A6465A0000000000000010 /* ItemRepository.swift */,
+				C1A6465A0000000000000012 /* ItemRowView.swift */,
+				C1A6465A0000000000000014 /* ItemSearchViewModel.swift */,
+				072F281D2E7B5421006E2616 /* LicensesView.swift */,
+				072F281F2E7B5421006E2616 /* RootView.swift */,
+				072F28212E7B5421006E2616 /* SearchView.swift */,
+				072F28232E7B5421006E2616 /* Spell.swift */,
+				072F28252E7B5421006E2616 /* WoWCAApp.swift */,
+				072F28272E7B5421006E2616 /* Assets.xcassets */,
+				072F28292E7B5421006E2616 /* items.sqlite */,
+				072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */,
+				C1A6465A0000000000000016 /* Info.plist */,
+			);
+			path = WoWCA;
+			sourceTree = "<group>";
+		};
 		B0E4E0EF2E4D568E00265B49 = {
 			isa = PBXGroup;
 			children = (
-				B0E4E0FA2E4D568E00265B49 /* WoWCA */,
+				072F281C2E7B5421006E2616 /* WoWCA */,
 				B0E4E0F92E4D568E00265B49 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -78,9 +117,6 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				B0E4E0FA2E4D568E00265B49 /* WoWCA */,
-			);
 			name = WoWCA;
 			packageProductDependencies = (
 				B0E4E1192E4D5BE400265B49 /* GRDB */,
@@ -105,6 +141,7 @@
 				};
 			};
 			buildConfigurationList = B0E4E0F32E4D568E00265B49 /* Build configuration list for PBXProject "WoWCA" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,11 +149,9 @@
 				Base,
 			);
 			mainGroup = B0E4E0EF2E4D568E00265B49;
-			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B0E4E1182E4D5BE400265B49 /* XCRemoteSwiftPackageReference "GRDB" */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = B0E4E0F92E4D568E00265B49 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -131,6 +166,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				072F28282E7B5421006E2616 /* Assets.xcassets in Resources */,
+				072F282A2E7B5421006E2616 /* items.sqlite in Resources */,
+				072F282C2E7B5421006E2616 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +179,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1A6465A0000000000000001 /* AboutView.swift in Sources */,
+				C1A6465A0000000000000003 /* AppLogger.swift in Sources */,
+				C1A6465A0000000000000005 /* DatabaseService.swift in Sources */,
+				C1A6465A0000000000000007 /* Item.swift in Sources */,
+				C1A6465A0000000000000009 /* ItemDetailView.swift in Sources */,
+				072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */,
+				C1A6465A0000000000000011 /* ItemRepository.swift in Sources */,
+				C1A6465A0000000000000013 /* ItemRowView.swift in Sources */,
+				C1A6465A0000000000000015 /* ItemSearchViewModel.swift in Sources */,
+				072F281E2E7B5421006E2616 /* LicensesView.swift in Sources */,
+				072F28202E7B5421006E2616 /* RootView.swift in Sources */,
+				072F28222E7B5421006E2616 /* SearchView.swift in Sources */,
+				072F28242E7B5421006E2616 /* Spell.swift in Sources */,
+				072F28262E7B5421006E2616 /* WoWCAApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,39 +323,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z3E334EXZD;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WoWCA/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Gunndamental.WoWCA;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -315,39 +345,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z3E334EXZD;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WoWCA/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Gunndamental.WoWCA;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -379,8 +387,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

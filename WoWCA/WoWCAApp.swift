@@ -21,8 +21,10 @@ struct WoWCAApp: App {
         // Enable detailed Core Data logging if needed
         #if DEBUG
             print("🔧 DEBUG mode enabled - verbose logging active")
+            #if os(iOS)
             print("📱 Device: \(UIDevice.current.model)")
             print("📱 iOS Version: \(UIDevice.current.systemVersion)")
+            #endif
             print("📱 App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
             print(
                 "📱 App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")"
