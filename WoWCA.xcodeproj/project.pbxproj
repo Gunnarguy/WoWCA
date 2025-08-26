@@ -21,7 +21,6 @@
 		C1A6465A0000000000000003 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000002 /* AppLogger.swift */; };
 		C1A6465A0000000000000005 /* DatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000004 /* DatabaseService.swift */; };
 		C1A6465A0000000000000007 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000006 /* Item.swift */; };
-		C1A6465A0000000000000009 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000008 /* ItemDetailView.swift */; };
 		C1A6465A0000000000000011 /* ItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000010 /* ItemRepository.swift */; };
 		C1A6465A0000000000000013 /* ItemRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000012 /* ItemRowView.swift */; };
 		C1A6465A0000000000000015 /* ItemSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000014 /* ItemSearchViewModel.swift */; };
@@ -42,7 +41,6 @@
 		C1A6465A0000000000000002 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000004 /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000006 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
-		C1A6465A0000000000000008 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000010 /* ItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRepository.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000012 /* ItemRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRowView.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000014 /* ItemSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSearchViewModel.swift; sourceTree = "<group>"; };
@@ -68,7 +66,6 @@
 				C1A6465A0000000000000002 /* AppLogger.swift */,
 				C1A6465A0000000000000004 /* DatabaseService.swift */,
 				C1A6465A0000000000000006 /* Item.swift */,
-				C1A6465A0000000000000008 /* ItemDetailView.swift */,
 				072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */,
 				C1A6465A0000000000000010 /* ItemRepository.swift */,
 				C1A6465A0000000000000012 /* ItemRowView.swift */,
@@ -183,7 +180,6 @@
 				C1A6465A0000000000000003 /* AppLogger.swift in Sources */,
 				C1A6465A0000000000000005 /* DatabaseService.swift in Sources */,
 				C1A6465A0000000000000007 /* Item.swift in Sources */,
-				C1A6465A0000000000000009 /* ItemDetailView.swift in Sources */,
 				072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */,
 				C1A6465A0000000000000011 /* ItemRepository.swift in Sources */,
 				C1A6465A0000000000000013 /* ItemRowView.swift in Sources */,
