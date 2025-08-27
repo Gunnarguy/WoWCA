@@ -1,6 +1,8 @@
 # WoWCA: World of Warcraft Classic Assistant
 
-![WoWCA Screenshot](https://raw.githubusercontent.com/Gunnarguy/WoWCA/main/wowca_promo.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Gunnarguy/WoWCA/main/WoWCA/Assets.xcassets/AppIcon.appiconset/icon-mac-256@2x.png" width="128" alt="WoWCA Icon">
+</p>
 
 **WoWCA** is a comprehensive, offline-first item and spell database for World of Warcraft Classic, meticulously crafted for iOS, iPadOS, and visionOS. It provides instant access to a vast repository of in-game items and spells without requiring an internet connection, ensuring data is always available, private, and fast.
 
