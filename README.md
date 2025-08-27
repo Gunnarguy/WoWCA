@@ -246,4 +246,15 @@ Please open an issue on GitHub with the following details:
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="promo/Simulator Screenshot - iPhone 16 Pro Max - 2025-08-26 at 20.56.24.png" width="200" alt="Screenshot 1">
+  <img src="promo/Simulator Screenshot - iPhone 16 Pro Max - 2025-08-26 at 20.56.37.png" width="200" alt="Screenshot 2">
+  <img src="promo/Simulator Screenshot - iPhone 16 Pro Max - 2025-08-26 at 20.56.43.png" width="200" alt="Screenshot 3">
+  <img src="promo/Simulator Screenshot - iPhone 16 Pro Max - 2025-08-26 at 20.56.53.png" width="200" alt="Screenshot 4">
+</p>
+
+---
+
 MIT © 2025 Gunndamental
