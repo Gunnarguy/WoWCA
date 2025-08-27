@@ -251,7 +251,12 @@ struct AboutView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         ForEach(qualityCounts, id: \.0) { q in
                                             HStack {
-                                                Text("Quality \(q.0)").font(.caption.monospaced())
+                                                Text(qualityName(for: q.0))
+                                                    .font(.caption)
+                                                    .foregroundStyle(qualityColor(for: q.0))
+                                                Text("(\(q.0))")
+                                                    .font(.caption.monospaced())
+                                                    .foregroundStyle(.secondary)
                                                 Spacer()
                                                 Text("\(q.1)").font(.caption)
                                             }
@@ -266,12 +271,15 @@ struct AboutView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         ForEach(patchCounts, id: \.0) { p in
                                             HStack {
-                                                Text("Patch \(p.0)").font(.caption.monospaced())
+                                                Text(patchVersionName(for: p.0))
+                                                    .font(.caption.monospaced())
                                                 Spacer()
                                                 Text("\(p.1)").font(.caption)
                                             }
                                         }
                                     }.padding(.top, 4)
+                                    Text("Counts of items by the patch they were introduced in.")
+                                        .font(.caption2).foregroundStyle(.secondary)
                                 }
                                 if !topSpellRefs.isEmpty {
                                     DisclosureGroup("Top Spell References") {
@@ -333,14 +341,14 @@ struct AboutView: View {
                             NavigationLink("In‑App Licenses") { LicensesView() }
                             Button(action: { copyStatsToClipboard() }) {
                                 Label("Copy Diagnostics", systemImage: "doc.on.doc")
-                                    .labelStyle(.titleAndIcon)
                             }
+                            .buttonStyle(.bordered)
                             .font(.caption)
                             #if os(iOS)
                                 Button(action: { prepareAndShareDiagnostics() }) {
                                     Label("Share Diagnostics", systemImage: "square.and.arrow.up")
-                                        .labelStyle(.titleAndIcon)
                                 }
+                                .buttonStyle(.bordered)
                                 .font(.caption)
                             #endif
                             Text("Include diagnostics in new issues to speed up triage.").font(
@@ -359,8 +367,10 @@ struct AboutView: View {
                         }
                     }
                     InfoCard(title: "Acknowledgements", systemImage: "hands.clap.fill") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("GRDB.swift – MIT (SQLite / FTS5 layer)")
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let url = URL(string: "https://github.com/groue/GRDB.swift") {
+                                Link("GRDB.swift – MIT License", destination: url)
+                            }
                             Text("Apple Swift / SwiftUI frameworks")
                             Text("Community Classic data curators")
                             Text("Open-source contributors & testers")
@@ -455,7 +465,7 @@ struct AboutView: View {
     private var footer: some View {
         VStack(spacing: 6) {
             Divider().opacity(0.3)
-            Text("© 2025 Gunndamental. All rights reserved.")
+            Text("© \(currentYear()) Gunndamental. All rights reserved.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -478,6 +488,10 @@ struct AboutView: View {
     }
 
     // MARK: - Helpers
+    private func currentYear() -> String {
+        return String(Calendar.current.component(.year, from: Date()))
+    }
+
     private func platformString() -> String {
         #if os(iOS)
             return "iOS"
@@ -499,6 +513,53 @@ struct AboutView: View {
             i += 1
         }
         return String(format: i == 0 ? "%.0f %@" : "%.2f %@", value, units[i])
+    }
+
+    private func patchVersionName(for id: Int) -> String {
+        switch id {
+        case 0: return "1.0 (Release)"
+        case 1: return "1.1 (WoW Launch)"
+        case 2: return "1.2 (Mysteries of Maraudon)"
+        case 3: return "1.3 (Ruins of the Dire Maul)"
+        case 4: return "1.4 (The Call to War)"
+        case 5: return "1.5 (Battlegrounds)"
+        case 6: return "1.6 (Assault on Blackwing Lair)"
+        case 7: return "1.7 (Rise of the Blood God)"
+        case 8: return "1.8 (Dragons of Nightmare)"
+        case 9: return "1.9 (The Gates of Ahn'Qiraj)"
+        case 10: return "1.10 (Storms of Azeroth)"
+        case 11: return "1.11 (Shadow of the Necropolis)"
+        case 12: return "1.12 (Drums of War)"
+        default: return "Patch \(id)"
+        }
+    }
+
+    private func qualityName(for id: Int) -> String {
+        switch id {
+        case 0: return "Poor"
+        case 1: return "Common"
+        case 2: return "Uncommon"
+        case 3: return "Rare"
+        case 4: return "Epic"
+        case 5: return "Legendary"
+        case 6: return "Artifact"
+        case 7: return "Heirloom"
+        default: return "Unknown"
+        }
+    }
+
+    private func qualityColor(for id: Int) -> Color {
+        switch id {
+        case 0: return .gray
+        case 1: return .primary
+        case 2: return .green
+        case 3: return .blue
+        case 4: return .purple
+        case 5: return .orange
+        case 6: return .red
+        case 7: return .yellow
+        default: return .secondary
+        }
     }
 
     // MARK: - Load Stats

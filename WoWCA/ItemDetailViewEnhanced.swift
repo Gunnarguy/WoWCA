@@ -87,33 +87,758 @@ struct ItemDetailViewEnhanced: View {
     private var overviewTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                // Core Combat Stats - Only show if item has stats
                 if !item.formattedStats.isEmpty {
-                    statsSection
+                    enhancedStatsSection
                     Divider()
                 }
-                if !item.formattedResistances.isEmpty {
-                    resistancesSection
+                
+                // Weapon Information - Only for actual weapons with weapon stats
+                if hasWeaponStats() {
+                    enhancedWeaponSection
                     Divider()
                 }
-                if item.isWeapon {
-                    weaponStatsSection
+                
+                // Defense & Survivability - Only if item has defensive properties
+                if hasDefensiveStats() {
+                    enhancedDefenseSection
                     Divider()
                 }
-                if !item.secondaryDamageTypes.isEmpty {
-                    secondaryDamageSection
+                
+                // Spell Effects & Bonuses - Only if item has magical properties
+                if hasSpellProperties() {
+                    enhancedSpellPropertiesSection
                     Divider()
                 }
-                if item.hasArmor {
-                    armorSection
+                
+                // Container & Stack Properties - Only for containers/bags
+                if hasContainerProperties() {
+                    enhancedContainerSection
                     Divider()
                 }
-                if item.block ?? 0 > 0 {
-                    blockSection
+                
+                // Special Properties - Only if item has special characteristics
+                if hasSpecialProperties() {
+                    enhancedSpecialPropertiesSection
                     Divider()
                 }
-                requirementsSection
+                
+                // Usage & Requirements - Only if item has requirements/restrictions
+                if hasRequirements() {
+                    enhancedRequirementsSection
+                    Divider()
+                }
+                
+                // Economic Information - Only if item has economic data
+                if hasEconomicData() {
+                    enhancedEconomicSection
+                }
             }
             .padding()
+        }
+    }
+
+    // MARK: - Enhanced Overview Sections
+    
+    @ViewBuilder
+    private var enhancedStatsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Combat Statistics", systemImage: "chart.bar.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            // Categorize stats intelligently
+            let (primaryStats, secondaryStats, resistanceStats, specialStats) = categorizeStats()
+            
+            if !primaryStats.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Primary Attributes")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    ForEach(primaryStats, id: \.self) { stat in
+                        statLine(icon: "plus.circle.fill", color: .green, text: stat)
+                    }
+                }
+                .padding(.leading)
+            }
+            
+            if !secondaryStats.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Combat Ratings")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    ForEach(secondaryStats, id: \.self) { stat in
+                        statLine(icon: "target", color: .blue, text: stat)
+                    }
+                }
+                .padding(.leading)
+            }
+            
+            if !resistanceStats.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Resistances")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    ForEach(resistanceStats, id: \.self) { stat in
+                        statLine(icon: "shield.lefthalf.filled", color: .orange, text: stat)
+                    }
+                }
+                .padding(.leading)
+            }
+            
+            if !specialStats.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Special Properties")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    ForEach(specialStats, id: \.self) { stat in
+                        statLine(icon: "sparkles", color: .purple, text: stat)
+                    }
+                }
+                .padding(.leading)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedWeaponSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Weapon Properties", systemImage: "sword.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Primary damage
+                if let damageString = item.weaponDamageString {
+                    HStack {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Damage:")
+                            .foregroundStyle(.secondary)
+                        Text(damageString)
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                // All damage types (including elemental)
+                let allDamageTypes = getAllDamageTypes()
+                ForEach(allDamageTypes, id: \.self) { damageType in
+                    HStack {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text(damageType)
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Weapon speed and DPS
+                if let speed = item.weaponSpeed {
+                    HStack {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Speed:")
+                            .foregroundStyle(.secondary)
+                        Text("\(speed) sec")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let dps = item.dpsString {
+                    HStack {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("DPS:")
+                            .foregroundStyle(.secondary)
+                        Text(dps)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.green)
+                    }
+                }
+                
+                // Range and ammo
+                if let rangeMod = item.range_mod, rangeMod > 0 {
+                    HStack {
+                        Image(systemName: "scope")
+                            .foregroundStyle(.cyan)
+                            .font(.caption)
+                        Text("Range:")
+                            .foregroundStyle(.secondary)
+                        Text("\(String(format: "%.0f", rangeMod)) yards")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let ammoType = item.ammo_type, ammoType > 0 {
+                    HStack {
+                        Image(systemName: "arrow.up.right")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Ammo Type:")
+                            .foregroundStyle(.secondary)
+                        Text(ammoTypeName(ammoType))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Weapon skill bonus
+                if hasWeaponSkillBonus() {
+                    HStack {
+                        Image(systemName: "hand.raised.fill")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Weapon Skill Bonus")
+                            .fontWeight(.medium)
+                            .foregroundStyle(.purple)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedDefenseSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Defense & Survivability", systemImage: "shield.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Armor
+                if let armor = item.armor, armor > 0 {
+                    HStack {
+                        Image(systemName: "shield")
+                            .foregroundStyle(.gray)
+                            .font(.caption)
+                        Text("Armor:")
+                            .foregroundStyle(.secondary)
+                        Text("\(armor)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                // Block value
+                if let block = item.block, block > 0 {
+                    HStack {
+                        Image(systemName: "shield.righthalf.filled")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Block Value:")
+                            .foregroundStyle(.secondary)
+                        Text("\(block)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                // All resistances with proper categorization
+                let resistances = getAllResistances()
+                ForEach(resistances, id: \.self) { resistance in
+                    HStack {
+                        Image(systemName: "sparkles.rectangle.stack")
+                            .foregroundStyle(resistanceColor(for: resistance))
+                            .font(.caption)
+                        Text(resistance)
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedSpellPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Magical Properties", systemImage: "sparkles.rectangle.stack.fill")
+                .font(.headline)
+                .foregroundStyle(.purple)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Spell bonuses from computed properties
+                ForEach(item.formattedSpellBonuses, id: \.self) { bonus in
+                    HStack {
+                        Image(systemName: "wand.and.stars")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text(bonus)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.purple)
+                    }
+                }
+                
+                // Spell effects summary
+                if !item.allSpellEffects.isEmpty {
+                    Text("✨ \(item.allSpellEffects.count) spell effect\(item.allSpellEffects.count == 1 ? "" : "s") (see Spells tab)")
+                        .font(.caption)
+                        .foregroundStyle(.purple)
+                        .italic()
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedContainerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Container Properties", systemImage: "archivebox.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Container slots
+                if let slots = item.container_slots, slots > 0 {
+                    HStack {
+                        Image(systemName: "grid.circle")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Container Slots:")
+                            .foregroundStyle(.secondary)
+                        Text("\(slots)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                // Stack size
+                if let stackString = item.stackSizeString {
+                    HStack {
+                        Image(systemName: "square.stack.3d.up")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text(stackString)
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Max count
+                if let maxCount = item.max_count, maxCount > 1 {
+                    HStack {
+                        Image(systemName: "number.square")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Max Count:")
+                            .foregroundStyle(.secondary)
+                        Text("\(maxCount)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Bag family
+                if let bagFamily = item.bag_family, bagFamily > 0 {
+                    HStack {
+                        Image(systemName: "tag.circle")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Bag Type:")
+                            .foregroundStyle(.secondary)
+                        Text(bagFamilyName(bagFamily))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Buy count (stacking for vendors)
+                if let buyCount = item.buy_count, buyCount > 1 {
+                    HStack {
+                        Image(systemName: "cart.badge.plus")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Vendor Stack:")
+                            .foregroundStyle(.secondary)
+                        Text("\(buyCount)")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedRequirementsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Requirements & Restrictions", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Level requirements
+                if let reqLevel = item.required_level, reqLevel > 0 {
+                    HStack {
+                        Image(systemName: "person.circle")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Level \(reqLevel)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                // Class restrictions
+                if let allowableClass = item.allowable_class, allowableClass != -1 {
+                    HStack {
+                        Image(systemName: "person.3.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text(classNames(for: allowableClass))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Race restrictions
+                if let allowableRace = item.allowable_race, allowableRace != -1 {
+                    HStack {
+                        Image(systemName: "globe.badge.chevron.backward")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text(raceNames(for: allowableRace))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Skill requirements
+                if let skill = item.required_skill, skill > 0 {
+                    HStack {
+                        Image(systemName: "hammer.fill")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Requires:")
+                            .foregroundStyle(.secondary)
+                        Text(skillName(skill))
+                            .fontWeight(.medium)
+                        if let skillRank = item.required_skill_rank, skillRank > 0 {
+                            Text("(\(skillRank))")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
+                // Spell requirement
+                if let spell = item.required_spell, spell > 0 {
+                    HStack {
+                        Image(systemName: "sparkles.square.filled.on.square")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Requires Spell:")
+                            .foregroundStyle(.secondary)
+                        Text("ID \(spell)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Honor/PvP requirements
+                if let honorRank = item.required_honor_rank, honorRank > 0 {
+                    HStack {
+                        Image(systemName: "flag.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Honor Rank:")
+                            .foregroundStyle(.secondary)
+                        Text(honorRankName(honorRank))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // City rank
+                if let cityRank = item.required_city_rank, cityRank > 0 {
+                    HStack {
+                        Image(systemName: "building.2.fill")
+                            .foregroundStyle(.cyan)
+                            .font(.caption)
+                        Text("City Rank:")
+                            .foregroundStyle(.secondary)
+                        Text("\(cityRank)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Reputation requirements
+                if let repFaction = item.required_reputation_faction, repFaction > 0 {
+                    HStack {
+                        Image(systemName: "person.2.badge.gearshape")
+                            .foregroundStyle(.indigo)
+                            .font(.caption)
+                        Text("Faction:")
+                            .foregroundStyle(.secondary)
+                        Text("ID \(repFaction)")
+                            .fontWeight(.medium)
+                        if let repRank = item.required_reputation_rank, repRank > 0 {
+                            Text("(\(reputationRankName(repRank)))")
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedSpecialPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Special Properties", systemImage: "star.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                if item.isTemporary {
+                    HStack {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Temporary Item")
+                            .fontWeight(.medium)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                
+                if let duration = item.duration, duration > 0 {
+                    HStack {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Duration:")
+                            .foregroundStyle(.secondary)
+                        Text(formatDuration(duration))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if hasProjectileStats() {
+                    HStack {
+                        Image(systemName: "arrow.up.right")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Projectile Type: Ammunition")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let foodType = item.food_type, foodType > 0 {
+                    HStack {
+                        Image(systemName: "fork.knife")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Food Type:")
+                            .foregroundStyle(.secondary)
+                        Text(foodTypeName(foodType))
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var enhancedEconomicSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Economic Information", systemImage: "centsign.circle.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                if let buyPrice = item.buy_price, buyPrice > 0 {
+                    HStack {
+                        Image(systemName: "cart.badge.plus")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Buy Price:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(buyPrice))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let sellPrice = item.sell_price, sellPrice > 0 {
+                    HStack {
+                        Image(systemName: "cart.badge.minus")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Sell Price:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(sellPrice))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let buyCount = item.buy_count, buyCount > 1 {
+                    HStack {
+                        Image(systemName: "number.circle")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Buy Count:")
+                            .foregroundStyle(.secondary)
+                        Text("\(buyCount)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let stackable = item.stackable, stackable > 1 {
+                    HStack {
+                        Image(systemName: "square.stack")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Stack Size:")
+                            .foregroundStyle(.secondary)
+                        Text("\(stackable)")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    private func formatPrice(_ price: Int) -> String {
+        let gold = price / 10000
+        let silver = (price % 10000) / 100
+        let copper = price % 100
+        
+        var result = ""
+        if gold > 0 {
+            result += "\(gold)g"
+        }
+        if silver > 0 {
+            if !result.isEmpty { result += " " }
+            result += "\(silver)s"
+        }
+        if copper > 0 || result.isEmpty {
+            if !result.isEmpty { result += " " }
+            result += "\(copper)c"
+        }
+        return result
+    }
+    
+    // MARK: - Enhanced Helper Functions
+    
+    private func categorizeStats() -> ([String], [String], [String], [String]) {
+        var primaryStats: [String] = []
+        var secondaryStats: [String] = []
+        var resistanceStats: [String] = []
+        var specialStats: [String] = []
+        
+        let allStats = [
+            (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
+            (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
+            (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
+            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
+            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+        ]
+        
+        for (type, value) in allStats {
+            guard let type = type, let value = value, value != 0 else { continue }
+            
+            let statText = "+\(value) \(statTypeName(type))"
+            
+            // Categorize intelligently
+            switch type {
+            case 1, 2, 3, 4, 5, 6, 7: // Health, Mana, Agility, Strength, Intellect, Spirit, Stamina
+                primaryStats.append(statText)
+            case 12...31: // Defense through Spell Penetration (combat ratings)
+                secondaryStats.append(statText)
+            case 32...43: // Attack Power through Mastery Rating
+                secondaryStats.append(statText)
+            case 45...50: // Resistances
+                resistanceStats.append(statText)
+            default:
+                specialStats.append(statText)
+            }
+        }
+        
+        return (primaryStats, secondaryStats, resistanceStats, specialStats)
+    }
+    
+    private func getAllDamageTypes() -> [String] {
+        var damages: [String] = []
+        let allDamages = [
+            (item.dmg_min2, item.dmg_max2, item.dmg_type2),
+            (item.dmg_min3, item.dmg_max3, item.dmg_type3),
+            (item.dmg_min4, item.dmg_max4, item.dmg_type4),
+            (item.dmg_min5, item.dmg_max5, item.dmg_type5)
+        ]
+        
+        for (minDmg, maxDmg, type) in allDamages {
+            if let minDmg = minDmg, let maxDmg = maxDmg, let type = type, (minDmg > 0 || maxDmg > 0) {
+                let typeName = damageTypeName(for: type)
+                damages.append("+\(Int(minDmg))-\(Int(maxDmg)) \(typeName)")
+            }
+        }
+        return damages
+    }
+    
+    private func getAllResistances() -> [String] {
+        var resistances: [String] = []
+        if let holy = item.holy_res, holy > 0 { resistances.append("+\(holy) Holy Resistance") }
+        if let fire = item.fire_res, fire > 0 { resistances.append("+\(fire) Fire Resistance") }
+        if let nature = item.nature_res, nature > 0 { resistances.append("+\(nature) Nature Resistance") }
+        if let frost = item.frost_res, frost > 0 { resistances.append("+\(frost) Frost Resistance") }
+        if let shadow = item.shadow_res, shadow > 0 { resistances.append("+\(shadow) Shadow Resistance") }
+        if let arcane = item.arcane_res, arcane > 0 { resistances.append("+\(arcane) Arcane Resistance") }
+        return resistances
+    }
+    
+    private func hasDefensiveStats() -> Bool {
+        return item.hasArmor || (item.block ?? 0) > 0 || !getAllResistances().isEmpty
+    }
+    
+    private func hasSpellProperties() -> Bool {
+        return !item.formattedSpellBonuses.isEmpty || !item.allSpellEffects.isEmpty
+    }
+    
+    private func hasWeaponSkillBonus() -> Bool {
+        // Check if any stats are weapon skill related
+        let allStats = [
+            item.stat_type1, item.stat_type2, item.stat_type3, item.stat_type4, item.stat_type5,
+            item.stat_type6, item.stat_type7, item.stat_type8, item.stat_type9, item.stat_type10
+        ]
+        return allStats.contains(8) // Weapon Skill stat type
+    }
+    
+    private func resistanceColor(for resistance: String) -> Color {
+        if resistance.contains("Holy") { return .yellow }
+        if resistance.contains("Fire") { return .red }
+        if resistance.contains("Nature") { return .green }
+        if resistance.contains("Frost") { return .cyan }
+        if resistance.contains("Shadow") { return .purple }
+        if resistance.contains("Arcane") { return .blue }
+        return .orange
+    }
+    
+    private func statTypeName(_ type: Int) -> String {
+        let statMap: [Int: String] = [
+            1: "Health", 2: "Mana", 3: "Agility", 4: "Strength", 5: "Intellect", 6: "Spirit", 7: "Stamina",
+            8: "Weapon Skill", 12: "Defense Rating", 13: "Dodge Rating", 14: "Parry Rating", 15: "Block Rating",
+            16: "Hit Rating (Melee)", 17: "Hit Rating (Ranged)", 18: "Hit Rating (Spell)",
+            19: "Crit Rating (Melee)", 20: "Crit Rating (Ranged)", 21: "Crit Rating (Spell)",
+            22: "Hit Avoidance", 23: "Crit Avoidance", 24: "Hit Taken (Melee)", 25: "Hit Taken (Ranged)",
+            26: "Hit Taken (Spell)", 27: "Crit Taken (Melee)", 28: "Crit Taken (Ranged)", 29: "Crit Taken (Spell)",
+            30: "Haste Rating", 31: "Spell Penetration", 32: "Attack Power", 33: "Ranged Attack Power",
+            34: "Feral Attack Power", 35: "Spell Healing", 36: "Spell Damage", 37: "Mana Regeneration",
+            38: "Armor Penetration", 39: "Spell Power", 40: "Health Regen", 41: "Spell Penetration",
+            42: "Block Value", 43: "Mastery Rating", 44: "Armor", 45: "Fire Resistance",
+            46: "Frost Resistance", 47: "Holy Resistance", 48: "Shadow Resistance", 49: "Nature Resistance", 
+            50: "Arcane Resistance"
+        ]
+        return statMap[type] ?? "Unknown Stat \(type)"
+    }
+    
+    private func damageTypeName(for type: Int) -> String {
+        switch type {
+        case 1: return "Holy"
+        case 2: return "Fire"
+        case 3: return "Nature"
+        case 4: return "Frost"
+        case 5: return "Shadow"
+        case 6: return "Arcane"
+        default: return "Physical"
         }
     }
 
@@ -168,6 +893,24 @@ struct ItemDetailViewEnhanced: View {
                             .foregroundStyle(.primary)
                     }
                 }
+
+                if let rangeMod = item.range_mod, rangeMod > 0 {
+                    HStack {
+                        Text("Range:")
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%.0f yards", rangeMod))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let ammoType = item.ammo_type, ammoType > 0 {
+                    HStack {
+                        Text("Ammo:")
+                            .foregroundStyle(.secondary)
+                        Text(ammoTypeName(ammoType))
+                            .fontWeight(.medium)
+                    }
+                }
             }
             .padding(.leading)
         }
@@ -209,6 +952,69 @@ struct ItemDetailViewEnhanced: View {
                     }
                 }
 
+                if let skill = item.required_skill, skill > 0 {
+                    HStack {
+                        Text("Requires Skill:")
+                            .foregroundStyle(.secondary)
+                        Text(skillName(skill))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let skillRank = item.required_skill_rank, skillRank > 0 {
+                    HStack {
+                        Text("Skill Level:")
+                            .foregroundStyle(.secondary)
+                        Text("\(skillRank)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let spell = item.required_spell, spell > 0 {
+                    HStack {
+                        Text("Requires Spell:")
+                            .foregroundStyle(.secondary)
+                        Text("Spell ID \(spell)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let honorRank = item.required_honor_rank, honorRank > 0 {
+                    HStack {
+                        Text("Honor Rank:")
+                            .foregroundStyle(.secondary)
+                        Text(honorRankName(honorRank))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let cityRank = item.required_city_rank, cityRank > 0 {
+                    HStack {
+                        Text("City Rank:")
+                            .foregroundStyle(.secondary)
+                        Text("\(cityRank)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let repFaction = item.required_reputation_faction, repFaction > 0 {
+                    HStack {
+                        Text("Reputation:")
+                            .foregroundStyle(.secondary)
+                        Text("Faction \(repFaction)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let repRank = item.required_reputation_rank, repRank > 0 {
+                    HStack {
+                        Text("Rep Level:")
+                            .foregroundStyle(.secondary)
+                        Text(reputationRankName(repRank))
+                            .fontWeight(.medium)
+                    }
+                }
+
                 if let allowableClass = item.allowable_class, allowableClass != -1 {
                     HStack {
                         Text("Classes:")
@@ -217,9 +1023,108 @@ struct ItemDetailViewEnhanced: View {
                             .fontWeight(.medium)
                     }
                 }
+
+                if let allowableRace = item.allowable_race, allowableRace != -1 {
+                    HStack {
+                        Text("Races:")
+                            .foregroundStyle(.secondary)
+                        Text(raceNames(for: allowableRace))
+                            .fontWeight(.medium)
+                    }
+                }
             }
             .padding(.leading)
         }
+    }
+
+    @ViewBuilder
+    private var spellBonusesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Spell Bonuses", systemImage: "sparkles.rectangle.stack.fill")
+                .font(.headline)
+                .foregroundStyle(.purple)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(item.formattedSpellBonuses, id: \.self) { bonus in
+                    HStack {
+                        Image(systemName: "wand.and.stars")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text(bonus)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.purple)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    @ViewBuilder
+    private var specialPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Special Properties", systemImage: "star.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let binding = item.bindingDescription {
+                    HStack {
+                        Image(systemName: "link.circle.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text(binding)
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let duration = item.durationString {
+                    HStack {
+                        Image(systemName: "timer.circle.fill")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Duration: \(duration)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if item.isSetItem {
+                    HStack {
+                        Image(systemName: "rectangle.3.group.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Part of an item set")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if item.startsQuest {
+                    HStack {
+                        Image(systemName: "scroll.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Starts a quest")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if item.isReadable {
+                    HStack {
+                        Image(systemName: "book.fill")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Readable")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    private func hasSpecialProperties() -> Bool {
+        return item.bindingDescription != nil || item.durationString != nil || 
+               item.isSetItem || item.startsQuest || item.isReadable
     }
 
     private var spellsTab: some View {
@@ -231,11 +1136,19 @@ struct ItemDetailViewEnhanced: View {
                     Text("Error loading spells: \(spellLoadError)")
                         .foregroundColor(.red)
                 } else if hasSpellEffects() {
+                    
+                    // Spell Effects Overview
+                    spellEffectsOverviewSection
+                    Divider()
+                    
+                    // Detailed spell breakdown
                     ForEach(Array(item.allSpellEffects.enumerated()), id: \.offset) { idx, effect in
                         if let spell = loadedSpells[effect.spellId] {
-                            spellDetailSection(spell: spell, effect: effect)
+                            comprehensiveSpellSection(spell: spell, effect: effect, index: idx + 1)
+                            if idx < item.allSpellEffects.count - 1 {
+                                Divider()
+                            }
                         } else {
-                            // This case indicates a logic error - if not loading and no error, spells should be loaded.
                             Text("Could not load spell data for spell ID: \(effect.spellId)")
                                 .font(.caption)
                                 .foregroundStyle(.red)
@@ -249,6 +1162,369 @@ struct ItemDetailViewEnhanced: View {
                 }
             }
             .padding()
+        }
+    }
+    
+    @ViewBuilder
+    private var spellEffectsOverviewSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Spell Effects Overview", systemImage: "sparkles.tv")
+                .font(.headline)
+                .foregroundStyle(.purple)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("This item has \(item.allSpellEffects.count) spell effect\(item.allSpellEffects.count == 1 ? "" : "s"):")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                ForEach(Array(item.allSpellEffects.enumerated()), id: \.offset) { idx, effect in
+                    HStack {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(.purple)
+                            .font(.caption2)
+                        Text("Spell \(idx + 1):")
+                            .fontWeight(.medium)
+                        Text("ID \(effect.spellId)")
+                            .fontWeight(.semibold)
+                            .textSelection(.enabled)
+                        Text("(\(effect.triggerDescription))")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private func comprehensiveSpellSection(spell: Spell, effect: SpellEffect, index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Spell Header
+            HStack {
+                Label("Spell \(index)", systemImage: "sparkles")
+                    .font(.headline)
+                    .foregroundStyle(.purple)
+                Spacer()
+                Text("ID: \(spell.id)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            
+            // Spell Name and Description
+            VStack(alignment: .leading, spacing: 8) {
+                if let name = spell.name1, !name.isEmpty {
+                    Text(name)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                }
+                
+                Text(spell.parsedDescription())
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(Color.purple.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            
+            // Item-Specific Properties (always shown since this is the item spell context)
+            itemSpellPropertiesSection(effect: effect)
+            
+            // Core Spell Mechanics (only if spell has core mechanics)
+            if hasSpellMechanics(spell: spell) {
+                coreSpellMechanicsSection(spell: spell)
+            }
+            
+            // Spell Effects Detail (only if spell has effects)
+            if hasSpellEffectDetails(spell: spell) {
+                spellEffectsDetailSection(spell: spell)
+            }
+            
+            // Advanced Spell Properties (only if spell has advanced data)
+            if hasAdvancedSpellData(spell: spell) {
+                advancedSpellPropertiesSection(spell: spell)
+            }
+            
+            // Technical Spell Data (only if spell has technical data)
+            if hasSpellTechnicalData(spell: spell) {
+                technicalSpellDataSection(spell: spell)
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    @ViewBuilder
+    private func itemSpellPropertiesSection(effect: SpellEffect) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Item Properties")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.blue)
+            
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 6) {
+                NerdStat(label: "Trigger", value: effect.triggerDescription)
+                
+                if let charges = effect.charges, charges > 0 {
+                    NerdStat(label: "Charges", value: charges)
+                }
+                
+                if let ppm = effect.ppmRate, ppm > 0 {
+                    NerdStat(label: "PPM Rate", value: String(format: "%.1f", ppm))
+                }
+                
+                if let cd = effect.cooldown, cd > 0 {
+                    let seconds = cd / 1000
+                    NerdStat(label: "Cooldown", value: "\(seconds) sec")
+                }
+                
+                if let catCd = effect.categoryCooldown, catCd > 0 {
+                    let seconds = catCd / 1000
+                    NerdStat(label: "Category CD", value: "\(seconds) sec")
+                }
+                
+                if let category = effect.category, category > 0 {
+                    NerdStat(label: "Spell Category", value: category)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func coreSpellMechanicsSection(spell: Spell) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Core Mechanics")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.green)
+            
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 6) {
+                if let school = spell.school {
+                    NerdStat(label: "School", value: schoolName(school))
+                }
+                
+                if let level = spell.spellLevel, level > 0 {
+                    NerdStat(label: "Spell Level", value: level)
+                }
+                
+                if let baseLevel = spell.baseLevel, baseLevel > 0 {
+                    NerdStat(label: "Base Level", value: baseLevel)
+                }
+                
+                if let maxLevel = spell.maxLevel, maxLevel > 0 {
+                    NerdStat(label: "Max Level", value: maxLevel)
+                }
+                
+                if let manaCost = spell.manaCost {
+                    NerdStat(label: "Mana Cost", value: manaCost > 0 ? "\(manaCost)" : "Free")
+                }
+                
+                if let manaCostPerLevel = spell.manaCostPerLevel, manaCostPerLevel > 0 {
+                    NerdStat(label: "Mana/Level", value: manaCostPerLevel)
+                }
+                
+                if let speed = spell.speed, speed > 0 {
+                    NerdStat(label: "Cast Time", value: String(format: "%.1f sec", speed))
+                }
+                
+                if let dmgClass = spell.dmgClass {
+                    NerdStat(label: "Damage Type", value: damageClassName(dmgClass))
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func spellEffectsDetailSection(spell: Spell) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Spell Effects")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.red)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                // Effect 1
+                if let effect1 = spell.effect1, effect1 > 0 {
+                    spellEffectDetail(spell: spell, effectId: effect1, basePoints: spell.effectBasePoints1, 
+                                    dieSides: spell.effectDieSides1, baseDice: spell.effectBaseDice1,
+                                    dicePerLevel: spell.effectDicePerLevel1, realPointsPerLevel: spell.effectRealPointsPerLevel1,
+                                    mechanic: spell.effectMechanic1, triggerSpell: spell.effectTriggerSpell1,
+                                    miscValue: spell.effectMiscValue1, index: 1)
+                }
+                
+                // Effect 2
+                if let effect2 = spell.effect2, effect2 > 0 {
+                    spellEffectDetail(spell: spell, effectId: effect2, basePoints: spell.effectBasePoints2,
+                                    dieSides: spell.effectDieSides2, baseDice: spell.effectBaseDice2,
+                                    dicePerLevel: spell.effectDicePerLevel2, realPointsPerLevel: spell.effectRealPointsPerLevel2,
+                                    mechanic: spell.effectMechanic2, triggerSpell: spell.effectTriggerSpell2,
+                                    miscValue: spell.effectMiscValue2, index: 2)
+                }
+                
+                // Effect 3
+                if let effect3 = spell.effect3, effect3 > 0 {
+                    spellEffectDetail(spell: spell, effectId: effect3, basePoints: spell.effectBasePoints3,
+                                    dieSides: spell.effectDieSides3, baseDice: spell.effectBaseDice3,
+                                    dicePerLevel: spell.effectDicePerLevel3, realPointsPerLevel: spell.effectRealPointsPerLevel3,
+                                    mechanic: spell.effectMechanic3, triggerSpell: spell.effectTriggerSpell3,
+                                    miscValue: spell.effectMiscValue3, index: 3)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func spellEffectDetail(spell: Spell, effectId: Int, basePoints: Int?, dieSides: Int?, baseDice: Double?, 
+                                 dicePerLevel: Double?, realPointsPerLevel: Double?, mechanic: Int?, 
+                                 triggerSpell: Int?, miscValue: Int?, index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Effect \(index): \(effectName(effectId))")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.red)
+            
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 4) {
+                if let basePoints = basePoints {
+                    let actualValue = basePoints + 1
+                    NerdStat(label: "Base Value", value: actualValue)
+                }
+                
+                if let dieSides = dieSides, dieSides > 0 {
+                    NerdStat(label: "Die Sides", value: dieSides)
+                }
+                
+                if let baseDice = baseDice, baseDice > 0 {
+                    NerdStat(label: "Base Dice", value: baseDice)
+                }
+                
+                if let dicePerLevel = dicePerLevel, dicePerLevel > 0 {
+                    NerdStat(label: "Dice/Level", value: String(format: "%.2f", dicePerLevel))
+                }
+                
+                if let realPointsPerLevel = realPointsPerLevel, realPointsPerLevel > 0 {
+                    NerdStat(label: "Points/Level", value: String(format: "%.2f", realPointsPerLevel))
+                }
+                
+                if let mechanic = mechanic, mechanic > 0 {
+                    NerdStat(label: "Mechanic", value: mechanic)
+                }
+                
+                if let triggerSpell = triggerSpell, triggerSpell > 0 {
+                    NerdStat(label: "Triggers", value: "Spell \(triggerSpell)")
+                }
+                
+                if let miscValue = miscValue, miscValue != 0 {
+                    NerdStat(label: "Misc Value", value: miscValue)
+                }
+            }
+            
+            // Show damage range if available
+            if let damageRange = spell.damageRange(effectIndex: index) {
+                Text("Damage Range: \(damageRange)")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.orange)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.leading, 12)
+        .padding(.vertical, 6)
+        .background(Color.red.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+    
+    @ViewBuilder
+    private func advancedSpellPropertiesSection(spell: Spell) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Advanced Properties")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.orange)
+            
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 6) {
+                // Proc information
+                if let procChance = spell.procChance, procChance > 0 {
+                    if procChance == 101 {
+                        NerdStat(label: "Proc Type", value: "On Hit")
+                    } else {
+                        NerdStat(label: "Proc Chance", value: "\(procChance)%")
+                    }
+                }
+                
+                if let procFlags = spell.procFlags, procFlags > 0 {
+                    NerdStat(label: "Proc Flags", value: "0x\(String(procFlags, radix: 16))")
+                }
+                
+                if let procCharges = spell.procCharges, procCharges > 0 {
+                    NerdStat(label: "Proc Charges", value: procCharges)
+                }
+                
+                // Attributes and flags
+                if let attributes = spell.attributes, attributes > 0 {
+                    NerdStat(label: "Attributes", value: "0x\(String(attributes, radix: 16))")
+                }
+                
+                if let attributesEx = spell.attributesEx, attributesEx > 0 {
+                    NerdStat(label: "AttributesEx", value: "0x\(String(attributesEx, radix: 16))")
+                }
+                
+                // Stances and targeting
+                if let stances = spell.stances, stances > 0 {
+                    NerdStat(label: "Stances", value: "0x\(String(stances, radix: 16))")
+                }
+                
+                if let targets = spell.targets, targets > 0 {
+                    NerdStat(label: "Targets", value: "0x\(String(targets, radix: 16))")
+                }
+                
+                // Duration and range
+                if let durationIndex = spell.durationIndex, durationIndex > 0 {
+                    NerdStat(label: "Duration Index", value: durationIndex)
+                }
+                
+                if let rangeIndex = spell.rangeIndex, rangeIndex > 0 {
+                    NerdStat(label: "Range Index", value: rangeIndex)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func technicalSpellDataSection(spell: Spell) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Technical Data")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.gray)
+            
+            LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 6) {
+                if let build = spell.build, build > 0 {
+                    NerdStat(label: "Build", value: build)
+                }
+                
+                if let category = spell.category, category > 0 {
+                    NerdStat(label: "Category", value: category)
+                }
+                
+                if let dispel = spell.dispel, dispel > 0 {
+                    NerdStat(label: "Dispel Type", value: dispel)
+                }
+                
+                if let mechanic = spell.mechanic, mechanic > 0 {
+                    NerdStat(label: "Mechanic", value: mechanic)
+                }
+                
+                if let spellIconId = spell.spellIconId, spellIconId > 0 {
+                    NerdStat(label: "Icon ID", value: spellIconId)
+                }
+                
+                if let activeIconId = spell.activeIconId, activeIconId > 0 {
+                    NerdStat(label: "Active Icon ID", value: activeIconId)
+                }
+            }
         }
     }
 
@@ -290,51 +1566,625 @@ struct ItemDetailViewEnhanced: View {
     private var detailsTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                // Item Identity & Metadata
+                itemIdentitySection
+                Divider()
+                
+                // Content & Patch Information
+                if hasContentInfo() {
+                    contentInformationSection
+                    Divider()
+                }
+                
+                // Economic Information (pricing, vendor data)
+                if hasPricingInfo() {
+                    economicInformationSection
+                    Divider()
+                }
+                
+                // Durability & Material Properties
                 if hasDurabilityInfo() {
-                    durabilitySection
+                    durabilityAndMaterialSection
                     Divider()
                 }
-                if hasItemProperties() {
-                    itemPropertiesSection
-                    Divider()
-                }
+                
+                // Binding & Ownership Properties
                 if hasBindingProperties() {
-                    bindingPropertiesSection
+                    bindingAndOwnershipSection
                     Divider()
                 }
+                
+                // Quest & Lore Properties
                 if hasQuestProperties() {
-                    questPropertiesSection
+                    questAndLoreSection
                     Divider()
                 }
-                if hasLootProperties() {
-                    lootPropertiesSection
+                
+                // Random Properties & Enhancement
+                if hasRandomProperties() {
+                    randomPropertiesSection
                     Divider()
                 }
-                if pricingVisible {
-                    pricingSection
-                }
-                if hasContainerProperties() {
+                
+                // Location & Access Restrictions
+                if hasLocationRestrictions() {
+                    locationRestrictionsSection
                     Divider()
-                    containerPropertiesSection
                 }
-                if hasConsumableProperties() {
-                    Divider()
-                    consumablePropertiesSection
-                }
+                
+                // Technical & Display Properties
                 if hasDisplayProperties() {
+                    technicalDisplaySection
                     Divider()
-                    displayPropertiesSection
                 }
-                if hasAdvancedProperties() {
+                
+                // Advanced Item Flags
+                if hasItemFlags() {
+                    advancedItemFlagsSection
                     Divider()
-                    advancedPropertiesSection
+                }
+                
+                // Extra System Flags
+                if hasExtraFlags() {
+                    extraSystemFlagsSection
                 }
             }
             .padding()
         }
     }
 
-    // MARK: - Detail Sections
+    // MARK: - Enhanced Detail Sections
+    
+    @ViewBuilder
+    private var itemIdentitySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Item Identity", systemImage: "person.text.rectangle")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Entry ID:")
+                        .foregroundStyle(.secondary)
+                    Text("\(item.entry)")
+                        .fontWeight(.semibold)
+                        .textSelection(.enabled)
+                }
+                
+                if let displayId = item.display_id, displayId > 0 {
+                    HStack {
+                        Text("Display ID:")
+                            .foregroundStyle(.secondary)
+                        Text("\(displayId)")
+                            .fontWeight(.medium)
+                            .textSelection(.enabled)
+                    }
+                }
+                
+                if let itemLevel = item.item_level, itemLevel > 0 {
+                    HStack {
+                        Text("Item Level:")
+                            .foregroundStyle(.secondary)
+                        Text("\(itemLevel)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let itemClass = item.class, let subclass = item.subclass {
+                    HStack {
+                        Text("Type:")
+                            .foregroundStyle(.secondary)
+                        Text("Class \(itemClass), Subclass \(subclass)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let inventoryType = item.inventory_type, inventoryType > 0 {
+                    HStack {
+                        Text("Equipment Slot:")
+                            .foregroundStyle(.secondary)
+                        Text(inventoryTypeName(inventoryType))
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var contentInformationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Content Information", systemImage: "calendar.badge.clock")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let patch = item.patch, patch > 0 {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Added in Patch:")
+                            .foregroundStyle(.secondary)
+                        Text(patchName(patch))
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let description = item.description, !description.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Description:")
+                            .foregroundStyle(.secondary)
+                        Text(description)
+                            .fontWeight(.medium)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.secondary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var economicInformationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Economic Information", systemImage: "dollarsign.circle")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let buyPrice = item.buy_price, buyPrice > 0 {
+                    HStack {
+                        Image(systemName: "cart")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Buy Price:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(buyPrice))
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let sellPrice = item.sell_price, sellPrice > 0 {
+                    HStack {
+                        Image(systemName: "minus.circle")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Sell Price:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(sellPrice))
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let buyCount = item.buy_count, buyCount > 1 {
+                    HStack {
+                        Image(systemName: "number.square")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Vendor Stack Size:")
+                            .foregroundStyle(.secondary)
+                        Text("\(buyCount)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Money loot information
+                if let minMoney = item.min_money_loot, minMoney > 0 {
+                    HStack {
+                        Image(systemName: "dollarsign.circle")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Min Money Drop:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(minMoney))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let maxMoney = item.max_money_loot, maxMoney > 0 {
+                    HStack {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Max Money Drop:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(maxMoney))
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var durabilityAndMaterialSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Durability & Materials", systemImage: "hammer.fill")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let maxDurability = item.max_durability, maxDurability > 0 {
+                    HStack {
+                        Image(systemName: "wrench.and.screwdriver")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Max Durability:")
+                            .foregroundStyle(.secondary)
+                        Text("\(maxDurability)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let material = item.material, material >= 0 {
+                    HStack {
+                        Image(systemName: "cube")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Material:")
+                            .foregroundStyle(.secondary)
+                        Text(materialName(material))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let sheath = item.sheath, sheath > 0 {
+                    HStack {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(.gray)
+                            .font(.caption)
+                        Text("Sheath Type:")
+                            .foregroundStyle(.secondary)
+                        Text(sheathTypeName(sheath))
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var bindingAndOwnershipSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Binding & Ownership", systemImage: "link")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let binding = item.bonding, binding > 0 {
+                    HStack {
+                        Image(systemName: "link.circle")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Binding:")
+                            .foregroundStyle(.secondary)
+                        Text(bindingTypeName(binding))
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let otherTeam = item.other_team_entry, otherTeam > 1 {
+                    HStack {
+                        Image(systemName: "person.2.circle")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Faction Variant:")
+                            .foregroundStyle(.secondary)
+                        Text("Item \(otherTeam)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let duration = item.duration, duration > 0 {
+                    HStack {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Duration:")
+                            .foregroundStyle(.secondary)
+                        Text(item.durationString ?? "\(duration) seconds")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var questAndLoreSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Quest & Lore", systemImage: "scroll")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let questId = item.start_quest, questId > 0 {
+                    HStack {
+                        Image(systemName: "scroll.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Starts Quest:")
+                            .foregroundStyle(.secondary)
+                        Text("Quest ID \(questId)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let pageText = item.page_text, pageText > 0 {
+                    HStack {
+                        Image(systemName: "book.fill")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Readable Text:")
+                            .foregroundStyle(.secondary)
+                        Text("Text ID \(pageText)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let pageLang = item.page_language, pageLang > 0 {
+                    HStack {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Text Language:")
+                            .foregroundStyle(.secondary)
+                        Text(languageName(pageLang))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let pageMat = item.page_material, pageMat > 0 {
+                    HStack {
+                        Image(systemName: "doc.text")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Page Material:")
+                            .foregroundStyle(.secondary)
+                        Text(materialName(pageMat))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let lockId = item.lock_id, lockId > 0 {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.gray)
+                            .font(.caption)
+                        Text("Lock Picking:")
+                            .foregroundStyle(.secondary)
+                        Text("Lock ID \(lockId)")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var randomPropertiesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Random Properties & Enhancement", systemImage: "dice")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let randomProp = item.random_property, randomProp != 0 {
+                    HStack {
+                        Image(systemName: "dice.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Random Properties:")
+                            .foregroundStyle(.secondary)
+                        Text("ID \(randomProp)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let setId = item.set_id, setId > 0 {
+                    HStack {
+                        Image(systemName: "rectangle.3.group.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Item Set:")
+                            .foregroundStyle(.secondary)
+                        Text("Set ID \(setId)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
+                if let disenchantId = item.disenchant_id, disenchantId > 0 {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Disenchantable:")
+                            .foregroundStyle(.secondary)
+                        Text("Template ID \(disenchantId)")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var technicalDisplaySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Technical & Display Properties", systemImage: "gear")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let displayId = item.display_id, displayId > 0 {
+                    HStack {
+                        Image(systemName: "paintbrush")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Display Model:")
+                            .foregroundStyle(.secondary)
+                        Text("ID \(displayId)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let inventoryType = item.inventory_type, inventoryType > 0 {
+                    HStack {
+                        Image(systemName: "square.grid.3x3")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Inventory Slot:")
+                            .foregroundStyle(.secondary)
+                        Text("\(inventoryType) (\(inventoryTypeName(inventoryType)))")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let foodType = item.food_type, foodType > 0 {
+                    HStack {
+                        Image(systemName: "fork.knife")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Food Category:")
+                            .foregroundStyle(.secondary)
+                        Text(foodTypeName(foodType))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if let bagFamily = item.bag_family, bagFamily > 0 {
+                    HStack {
+                        Image(systemName: "bag")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Bag Family:")
+                            .foregroundStyle(.secondary)
+                        Text(bagFamilyName(bagFamily))
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var advancedItemFlagsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Item Flags", systemImage: "flag.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let flags = item.flags, flags > 0 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Flags Value:")
+                                .foregroundStyle(.secondary)
+                            Text("0x\(String(flags, radix: 16).uppercased())")
+                                .fontWeight(.medium)
+                                .textSelection(.enabled)
+                        }
+                        
+                        ForEach(itemFlagsDescription(flags), id: \.self) { flagDesc in
+                            HStack {
+                                Image(systemName: "flag.circle")
+                                    .foregroundStyle(.orange)
+                                    .font(.caption)
+                                Text(flagDesc)
+                                    .fontWeight(.medium)
+                            }
+                        }
+                    }
+                } else {
+                    Text("No special flags set")
+                        .foregroundStyle(.secondary)
+                        .italic()
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    @ViewBuilder
+    private var extraSystemFlagsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Extra System Flags", systemImage: "gear.badge")
+                .font(.headline)
+                .foregroundStyle(.purple)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let extraFlags = item.extra_flags, extraFlags > 0 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Extra Flags:")
+                                .foregroundStyle(.secondary)
+                            Text("0x\(String(extraFlags, radix: 16).uppercased())")
+                                .fontWeight(.medium)
+                                .textSelection(.enabled)
+                        }
+                        
+                        Text("Advanced system behavior flags")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .italic()
+                    }
+                } else {
+                    Text("No extra system flags")
+                        .foregroundStyle(.secondary)
+                        .italic()
+                }
+            }
+            .padding(.leading)
+        }
+    }
+    
+    // MARK: - Enhanced Detail Helper Functions
+    
+    private func hasContentInfo() -> Bool {
+        return item.patch != nil || (item.description != nil && !item.description!.isEmpty)
+    }
+    
+    private func hasPricingInfo() -> Bool {
+        return item.buy_price != nil || item.sell_price != nil || item.min_money_loot != nil || item.max_money_loot != nil
+    }
+    
+    private func hasRandomProperties() -> Bool {
+        return (item.random_property ?? 0) != 0 || (item.set_id ?? 0) > 0 || (item.disenchant_id ?? 0) > 0
+    }
+    
+    private func hasExtraFlags() -> Bool {
+        return item.extra_flags != nil && item.extra_flags! > 0
+    }
+    
+    private func patchName(_ patch: Int) -> String {
+        let patches: [Int: String] = [
+            0: "1.0.0 (Launch)",
+            1: "1.1.0",
+            2: "1.2.0", 
+            3: "1.3.0",
+            4: "1.4.0",
+            5: "1.5.0",
+            6: "1.6.0",
+            7: "1.7.0",
+            8: "1.8.0",
+            9: "1.9.0",
+            10: "1.10.0",
+            11: "1.11.0",
+            12: "1.12.0"
+        ]
+        return patches[patch] ?? "Patch \(patch)"
+    }
     @ViewBuilder
     private var durabilitySection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -426,6 +2276,42 @@ struct ItemDetailViewEnhanced: View {
                             .fontWeight(.medium)
                     }
                 }
+
+                if let pageText = item.page_text, pageText > 0 {
+                    HStack {
+                        Image(systemName: "book.fill")
+                            .foregroundStyle(.brown)
+                            .font(.caption)
+                        Text("Page Text:")
+                            .foregroundStyle(.secondary)
+                        Text("Text ID \(pageText)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let pageLang = item.page_language, pageLang > 0 {
+                    HStack {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Page Language:")
+                            .foregroundStyle(.secondary)
+                        Text(languageName(pageLang))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let pageMat = item.page_material, pageMat > 0 {
+                    HStack {
+                        Image(systemName: "doc.text")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Page Material:")
+                            .foregroundStyle(.secondary)
+                        Text(materialName(pageMat))
+                            .fontWeight(.medium)
+                    }
+                }
             }
             .padding(.leading)
         }
@@ -447,6 +2333,54 @@ struct ItemDetailViewEnhanced: View {
                         Text("Disenchant ID:")
                             .foregroundStyle(.secondary)
                         Text("\(disenchantId)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let randomProp = item.random_property, randomProp != 0 {
+                    HStack {
+                        Image(systemName: "dice")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text("Random Properties:")
+                            .foregroundStyle(.secondary)
+                        Text("ID \(randomProp)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let minMoney = item.min_money_loot, minMoney > 0 {
+                    HStack {
+                        Image(systemName: "dollarsign.circle")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Min Money:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(minMoney))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let maxMoney = item.max_money_loot, maxMoney > 0 {
+                    HStack {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Max Money:")
+                            .foregroundStyle(.secondary)
+                        Text(formatPrice(maxMoney))
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let lockId = item.lock_id, lockId > 0 {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.gray)
+                            .font(.caption)
+                        Text("Lock ID:")
+                            .foregroundStyle(.secondary)
+                        Text("\(lockId)")
                             .fontWeight(.medium)
                     }
                 }
@@ -512,18 +2446,6 @@ struct ItemDetailViewEnhanced: View {
         return item.buy_price != nil || item.sell_price != nil
     }
 
-    private func formatPrice(_ price: Int) -> String {
-        let gold = price / 10000
-        let silver = (price % 10000) / 100
-        let copper = price % 100
-
-        var result = ""
-        if gold > 0 { result += "\(gold)g" }
-        if silver > 0 { result += (gold > 0 ? " " : "") + "\(silver)s" }
-        if copper > 0 || result.isEmpty { result += (result.isEmpty ? "" : " ") + "\(copper)c" }
-        return result
-    }
-
     private func bindingTypeName(_ binding: Int) -> String {
         let types: [Int: String] = [
             0: "No Binding", 1: "Bind on Pickup", 2: "Bind on Equip",
@@ -546,6 +2468,14 @@ struct ItemDetailViewEnhanced: View {
     private func hasDisplayProperties() -> Bool {
         return item.display_id != nil || item.material != nil || item.sheath != nil
             || item.inventory_type != nil
+    }
+
+    private func hasItemFlags() -> Bool {
+        return item.flags != nil && item.flags! > 0
+    }
+
+    private func hasLocationRestrictions() -> Bool {
+        return item.area_bound != nil || item.map_bound != nil || item.other_team_entry != nil
     }
 
     private func hasAdvancedProperties() -> Bool {
@@ -615,6 +2545,146 @@ struct ItemDetailViewEnhanced: View {
             0: "None", 1: "Main Hand", 2: "Off Hand", 3: "Ranged", 4: "Shield",
         ]
         return types[sheath] ?? "Unknown Sheath \(sheath)"
+    }
+    
+    // MARK: - Advanced Conditional Logic
+    
+    private func hasSecondaryStats() -> Bool {
+        let allStats = [
+            (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
+            (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
+            (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
+            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
+            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+        ]
+        return allStats.contains { type, value in
+            guard let t = type, let v = value, v != 0 else { return false }
+            // Secondary stats: crit, haste, hit, etc. (typically 14+)
+            return t >= 14 && t <= 50
+        }
+    }
+    
+    private func hasPrimaryStats() -> Bool {
+        let allStats = [
+            (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
+            (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
+            (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
+            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
+            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+        ]
+        return allStats.contains { type, value in
+            guard let t = type, let v = value, v != 0 else { return false }
+            // Primary stats: Strength, Agility, Stamina, Intellect, Spirit (1-7)
+            return t >= 1 && t <= 7
+        }
+    }
+    
+    private func hasWeaponStats() -> Bool {
+        return item.isWeapon && (
+            (item.dmg_min1 != nil && item.dmg_min1! > 0) ||
+            (item.delay != nil && item.delay! > 0) ||
+            (item.range_mod != nil) ||
+            (item.ammo_type != nil)
+        )
+    }
+    
+    private func hasMultipleDamageTypes() -> Bool {
+        let damageTypes = [
+            (item.dmg_min1, item.dmg_max1, item.dmg_type1),
+            (item.dmg_min2, item.dmg_max2, item.dmg_type2),
+            (item.dmg_min3, item.dmg_max3, item.dmg_type3),
+            (item.dmg_min4, item.dmg_max4, item.dmg_type4),
+            (item.dmg_min5, item.dmg_max5, item.dmg_type5)
+        ]
+        let validDamageTypes = damageTypes.filter { min, max, _ in
+            guard let min = min, let max = max else { return false }
+            return min > 0 || max > 0
+        }
+        return validDamageTypes.count > 1
+    }
+    
+    private func hasRequirements() -> Bool {
+        return (item.required_level ?? 0) > 1 ||
+               (item.required_skill ?? 0) > 0 ||
+               (item.required_skill_rank ?? 0) > 0 ||
+               (item.required_spell ?? 0) > 0 ||
+               (item.required_honor_rank ?? 0) > 0 ||
+               (item.required_city_rank ?? 0) > 0 ||
+               (item.required_reputation_faction ?? 0) > 0 ||
+               (item.allowable_class != nil && item.allowable_class! != -1) ||
+               (item.allowable_race != nil && item.allowable_race! != -1)
+    }
+    
+    private func hasEconomicData() -> Bool {
+        return (item.buy_price ?? 0) > 0 ||
+               (item.sell_price ?? 0) > 0 ||
+               (item.buy_count ?? 1) > 1 ||
+               (item.stackable ?? 1) > 1
+    }
+    
+    private func hasSpellMechanics(spell: Spell) -> Bool {
+        return (spell.castingTimeIndex ?? 0) > 0 ||
+               (spell.recoveryTime ?? 0) > 0 ||
+               (spell.categoryRecoveryTime ?? 0) > 0 ||
+               (spell.interruptFlags ?? 0) > 0 ||
+               (spell.procChance ?? 0) > 0 ||
+               (spell.manaCost ?? 0) > 0 ||
+               (spell.dmgClass ?? 0) > 0
+    }
+    
+    private func hasProjectileStats() -> Bool {
+        return item.isProjectile && (item.ammo_type != nil)
+    }
+    
+    private func hasSpellEffectDetails(spell: Spell) -> Bool {
+        return (spell.effect1 ?? 0) > 0 ||
+               (spell.effect2 ?? 0) > 0 ||
+               (spell.effect3 ?? 0) > 0
+    }
+    
+    private func hasAdvancedSpellData(spell: Spell) -> Bool {
+        return (spell.attributes ?? 0) > 0 ||
+               (spell.attributesEx ?? 0) > 0 ||
+               (spell.stances ?? 0) > 0 ||
+               (spell.targets ?? 0) > 0 ||
+               (spell.procFlags ?? 0) > 0
+    }
+    
+    private func hasSpellTechnicalData(spell: Spell) -> Bool {
+        return (spell.spellIconId ?? 0) > 0 ||
+               (spell.activeIconId ?? 0) > 0 ||
+               (spell.spellVisual1 ?? 0) > 0 ||
+               (spell.spellVisual2 ?? 0) > 0
+    }
+    
+    private func getPrimaryStats() -> [(String, String)] {
+        let allStats = [
+            (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
+            (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
+            (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
+            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
+            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+        ]
+        
+        return allStats.compactMap { type, value in
+            guard let t = type, let v = value, v != 0, t >= 1 && t <= 7 else { return nil }
+            return (statTypeName(t), "+\(v)")
+        }
+    }
+    
+    private func getSecondaryStats() -> [(String, String)] {
+        let allStats = [
+            (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
+            (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
+            (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
+            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
+            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+        ]
+        
+        return allStats.compactMap { type, value in
+            guard let t = type, let v = value, v != 0, t >= 14 && t <= 50 else { return nil }
+            return (statTypeName(t), "+\(v)")
+        }
     }
 
     private func inventoryTypeName(_ type: Int) -> String {
@@ -786,6 +2856,72 @@ struct ItemDetailViewEnhanced: View {
     }
 
     @ViewBuilder
+    private var itemFlagsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Item Flags", systemImage: "flag.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let flags = item.flags, flags > 0 {
+                    ForEach(itemFlagsDescription(flags), id: \.self) { flagDesc in
+                        HStack {
+                            Image(systemName: "flag.circle")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            Text(flagDesc)
+                                .fontWeight(.medium)
+                        }
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    @ViewBuilder
+    private var locationRestrictionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Location Restrictions", systemImage: "map.fill")
+                .font(.headline)
+                .foregroundStyle(.red)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let areaBound = item.area_bound, areaBound > 0 {
+                    HStack {
+                        Image(systemName: "location.circle")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Area Bound: Zone \(areaBound)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let mapBound = item.map_bound, mapBound > 0 {
+                    HStack {
+                        Image(systemName: "map.circle")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text("Map Bound: Map \(mapBound)")
+                            .fontWeight(.medium)
+                    }
+                }
+
+                if let otherTeam = item.other_team_entry, otherTeam > 0 {
+                    HStack {
+                        Image(systemName: "person.2.circle")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Faction Variant: Item \(otherTeam)")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.leading)
+        }
+    }
+
+    @ViewBuilder
     private var advancedPropertiesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Advanced Properties", systemImage: "gear")
@@ -878,7 +3014,11 @@ struct ItemDetailViewEnhanced: View {
 
     @ViewBuilder
     private var allDatabaseFieldsSection: some View {
-        DisclosureGroup("All Database Fields (Ultimate Nerd Mode)") {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("All Database Fields (Ultimate Nerd Mode)")
+                .font(.headline)
+                .foregroundStyle(Color.purple)
+            
             VStack(alignment: .leading, spacing: 16) {
                 basicInfoGrid
                 purchasingGrid
@@ -893,8 +3033,6 @@ struct ItemDetailViewEnhanced: View {
             }
             .padding(.top, 8)
         }
-        .font(.headline)
-        .foregroundStyle(Color.purple)
     }
 
     // MARK: - Database Field Grids
@@ -1181,6 +3319,87 @@ struct ItemDetailViewEnhanced: View {
             ? "Class Restricted (\(classFlags))" : allowedClasses.joined(separator: ", ")
     }
 
+    private func raceNames(for raceFlags: Int) -> String {
+        if raceFlags == -1 { return "All Races" }
+
+        let raceMap: [Int: String] = [
+            1: "Human", 2: "Orc", 4: "Dwarf", 8: "Night Elf",
+            16: "Undead", 32: "Tauren", 64: "Gnome", 128: "Troll",
+            512: "Blood Elf", 1024: "Draenei",
+        ]
+
+        var allowedRaces: [String] = []
+        for (flag, name) in raceMap {
+            if raceFlags & flag != 0 {
+                allowedRaces.append(name)
+            }
+        }
+
+        return allowedRaces.isEmpty
+            ? "Race Restricted (\(raceFlags))" : allowedRaces.joined(separator: ", ")
+    }
+
+    private func ammoTypeName(_ ammoType: Int) -> String {
+        switch ammoType {
+        case 1: return "Arrows"
+        case 2: return "Bullets" 
+        case 3: return "Thrown"
+        default: return "Ammo Type \(ammoType)"
+        }
+    }
+
+    private func itemFlagsDescription(_ flags: Int) -> [String] {
+        var descriptions: [String] = []
+        
+        if flags & 0x1 != 0 { descriptions.append("Soulbound") }
+        if flags & 0x2 != 0 { descriptions.append("Conjured") }
+        if flags & 0x4 != 0 { descriptions.append("Lootable") }
+        if flags & 0x8 != 0 { descriptions.append("Heroic") }
+        if flags & 0x10 != 0 { descriptions.append("Deprecated") }
+        if flags & 0x20 != 0 { descriptions.append("No Destroy") }
+        if flags & 0x40 != 0 { descriptions.append("Player Cast") }
+        if flags & 0x80 != 0 { descriptions.append("No Equip Cooldown") }
+        if flags & 0x200 != 0 { descriptions.append("Wrapper") }
+        if flags & 0x400 != 0 { descriptions.append("Party Loot") }
+        if flags & 0x800 != 0 { descriptions.append("Refundable") }
+        if flags & 0x1000 != 0 { descriptions.append("Charter") }
+        if flags & 0x8000 != 0 { descriptions.append("Readable") }
+        if flags & 0x10000 != 0 { descriptions.append("PvP Reward") }
+        
+        if descriptions.isEmpty {
+            descriptions.append("Flag Value: \(flags)")
+        }
+        
+        return descriptions
+    }
+
+    private func skillName(_ skillId: Int) -> String {
+        let skills: [Int: String] = [
+            129: "First Aid", 164: "Blacksmithing", 165: "Leatherworking", 171: "Alchemy",
+            182: "Herbalism", 184: "Mining", 185: "Cooking", 186: "Fishing", 
+            197: "Tailoring", 202: "Engineering", 333: "Enchanting", 755: "Jewelcrafting"
+        ]
+        return skills[skillId] ?? "Skill \(skillId)"
+    }
+
+    private func honorRankName(_ rank: Int) -> String {
+        let ranks: [Int: String] = [
+            1: "Private", 2: "Corporal", 3: "Sergeant", 4: "Master Sergeant",
+            5: "Sergeant Major", 6: "Knight", 7: "Knight-Lieutenant", 8: "Knight-Captain",
+            9: "Knight-Champion", 10: "Lieutenant Commander", 11: "Commander", 
+            12: "Marshal", 13: "Field Marshal", 14: "Grand Marshal"
+        ]
+        return ranks[rank] ?? "Rank \(rank)"
+    }
+
+    private func reputationRankName(_ rank: Int) -> String {
+        let ranks: [Int: String] = [
+            0: "Hated", 1: "Hostile", 2: "Unfriendly", 3: "Neutral",
+            4: "Friendly", 5: "Honored", 6: "Revered", 7: "Exalted"
+        ]
+        return ranks[rank] ?? "Standing \(rank)"
+    }
+
     @ViewBuilder
     private var resistancesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1252,19 +3471,29 @@ struct ItemDetailViewEnhanced: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(spell.name1 ?? "Spell \(spell.id)")
                 .font(.headline)
+            
+            // Show parsed spell description
+            Text(spell.parsedDescription())
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 4)
+                .background(Color.secondary.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            
             Group {
                 NerdStat(label: "Spell ID", value: String(spell.id))
                 if let build = spell.build, build > 0 {
                     NerdStat(label: "Build", value: build)
                 }
-                NerdStat(
-                    label: "School", value: spell.school.map { schoolName($0) })
+                if let school = spell.school {
+                    NerdStat(label: "School", value: schoolName(school))
+                }
                 if let level = spell.spellLevel, level > 0 {
                     NerdStat(label: "Spell Level", value: level)
                 }
-                NerdStat(
-                    label: "Mana Cost",
-                    value: spell.manaCost.map { $0 > 0 ? "\($0) mana" : "Free" })
+                if let manaCost = spell.manaCost {
+                    NerdStat(label: "Mana Cost", value: manaCost > 0 ? "\(manaCost) mana" : "Free")
+                }
 
                 // Item-specific data (PPM, charges, cooldowns)
                 if let charges = effect.charges, charges > 0 {
@@ -1310,6 +3539,17 @@ struct ItemDetailViewEnhanced: View {
                         let actualValue = basePoints + 1
                         NerdStat(label: "Effect 3 Value", value: actualValue)
                     }
+                }
+
+                // Show damage ranges for effects
+                if let damageRange1 = spell.damageRange(effectIndex: 1) {
+                    NerdStat(label: "Effect 1 Damage", value: damageRange1)
+                }
+                if let damageRange2 = spell.damageRange(effectIndex: 2) {
+                    NerdStat(label: "Effect 2 Damage", value: damageRange2)
+                }
+                if let damageRange3 = spell.damageRange(effectIndex: 3) {
+                    NerdStat(label: "Effect 3 Damage", value: damageRange3)
                 }
 
                 // Proc information with better formatting

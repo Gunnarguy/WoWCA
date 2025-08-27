@@ -321,7 +321,7 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WoWCA/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WoWCA;
+				INFOPLIST_KEY_CFBundleDisplayName = "WoW Classic DB";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -345,7 +345,7 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WoWCA/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WoWCA;
+				INFOPLIST_KEY_CFBundleDisplayName = "WoW Classic DB";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
