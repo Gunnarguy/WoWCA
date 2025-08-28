@@ -1,0 +1,34 @@
+name: ❓ General Question
+description: Ask a question about using the app
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about how to use WoW Classic DB? Ask away!
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: "How do I search for items that restore mana?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any additional context that might help us answer your question
+      placeholder: "I'm trying to find all items with mana restoration effects for my healer..."
+
+  - type: checkboxes
+    id: documentation_check
+    attributes:
+      label: Documentation Check
+      options:
+        - label: I have checked the app's About section
+        - label: I have checked the GitHub README
+        - label: I have searched existing issues

@@ -1,0 +1,59 @@
+name: 📊 Data Issue
+description: Report incorrect or missing item/spell data
+title: "[Data] "
+labels: ["data", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found incorrect item or spell data? Help us fix it! Please provide as much detail as possible.
+
+  - type: input
+    id: item_name
+    attributes:
+      label: Item/Spell Name
+      description: What is the name of the item or spell with incorrect data?
+      placeholder: "Thunderfury, Blessed Blade of the Windseeker"
+    validations:
+      required: true
+
+  - type: input
+    id: item_id
+    attributes:
+      label: Item/Spell ID
+      description: What is the ID number? (Found in item details)
+      placeholder: "19019"
+    validations:
+      required: false
+
+  - type: textarea
+    id: incorrect_data
+    attributes:
+      label: What's Wrong?
+      description: Describe what data is incorrect or missing
+      placeholder: "The damage range shows 150-250 but should be 175-275"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_data
+    attributes:
+      label: Expected Data
+      description: What should the correct data be? Include sources if possible.
+      placeholder: "Should be 175-275 damage according to Wowhead Classic"
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Where did you find the correct information?
+      placeholder: "Wowhead Classic, in-game tooltip, etc."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information or screenshots
+      placeholder: "This affects all versions of the item..."
