@@ -28,7 +28,8 @@ final class RecentsManager {
         
         do {
             try await repository.addToRecent(itemId: item.entry)
-            await loadRecentItems()
+            // Don't automatically reload - let the view decide when to refresh
+            // This prevents infinite loading when navigating to detail views
             
             logger.info("✅ Successfully added to recent items")
             print("✅ Added to recent items")
@@ -69,9 +70,11 @@ final class RecentsManager {
             try await repository.clearRecentItems()
             recentItems = []
             
-            // Provide haptic feedback
+            // Provide haptic feedback on iOS
+            #if os(iOS)
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.success)
+            #endif
             
             logger.info("✅ Recent items cleared")
             print("✅ Recent items cleared")

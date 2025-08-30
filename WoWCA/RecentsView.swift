@@ -29,14 +29,12 @@ struct RecentsView: View {
                 }
                 .onAppear {
                     logger.info("🕒 RecentsView appeared")
-                    print("🕒 RecentsView appeared")
                     Task {
                         await recentsManager.loadRecentItems()
                     }
                 }
                 .onDisappear {
                     logger.info("👋 RecentsView disappeared")
-                    print("👋 RecentsView disappeared")
                 }
         }
     }
@@ -62,7 +60,6 @@ struct RecentsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             logger.info("⏳ Recent items loading state appeared")
-            print("⏳ Loading recent items...")
         }
     }
     
@@ -74,7 +71,6 @@ struct RecentsView: View {
         }
         .onAppear {
             logger.info("📭 Empty recent items state appeared")
-            print("📭 No recent items to display")
         }
     }
     
@@ -86,7 +82,6 @@ struct RecentsView: View {
                         ItemRowView(item: item)
                             .onAppear {
                                 logger.info("👁️ Recent item row appeared: [\(item.entry)] \(item.name)")
-                                print("👁️ Showing recent: [\(item.entry)] \(item.name)")
                             }
                     }
                 }
@@ -107,17 +102,11 @@ struct RecentsView: View {
                 .environment(recentsManager)
                 .onAppear {
                     logger.info("📱 ItemDetailViewEnhanced appeared from recents for: [\(item.entry)] \(item.name)")
-                    print("📱 Detail view opened from recents: [\(item.entry)] \(item.name)")
-                    
-                    // Add to recent items when viewed
-                    Task {
-                        await recentsManager.addToRecent(item: item)
-                    }
+                    // Note: ItemDetailViewEnhanced handles adding to recents internally
                 }
         }
         .onAppear {
             logger.info("📋 Recent items list appeared with \(recentsManager.recentsCount) items")
-            print("📋 Recent items list showing \(recentsManager.recentsCount) items")
         }
         .refreshable {
             await recentsManager.loadRecentItems()

@@ -31,7 +31,9 @@ struct SearchView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("• Item names: \"thunderfury\", \"sulfuras\"")
                                 Text("• Item IDs: \"19019\", \"17182\"")
-                                
+                                Text("• Effects: \"spell crit\", \"extra attack\", \"chance on hit\"")
+                                Text("• Equipment: \"epic sword\", \"plate armor\", \"trinket\"")
+                                Text("• Damage types: \"fire damage\", \"frost\", \"poison\"")
                             }
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -117,7 +119,7 @@ struct SearchView: View {
                 logger.info("👋 SearchView disappeared")
                 print("👋 SearchView disappeared")
             }
-            .searchable(text: $vm.query, prompt: "Search by name")
+                        .searchable(text: $vm.query, prompt: "Search by name, stats, spell effects...")
             .onChange(of: vm.query) { oldValue, newValue in
                 logger.info("📝 Search text changed from '\(oldValue)' to '\(newValue)'")
                 print("📝 Search input: '\(oldValue)' -> '\(newValue)'")

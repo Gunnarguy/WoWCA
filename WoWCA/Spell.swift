@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os.log
 
 #if canImport(GRDB)
     import GRDB
@@ -327,6 +328,13 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
             }
         }
 
+        // Handle $h pattern (proc chance percentage)
+        if let procChance = procChance, procChance > 0 {
+            parsed = parsed.replacingOccurrences(of: "$h", with: "\(procChance)")
+        } else {
+            parsed = parsed.replacingOccurrences(of: "$h", with: "X")
+        }
+
         // Handle $x1, $x2, $x3 patterns (target counts, chain targets, etc.)
         // These usually come from effectChainTarget or maxAffectedTargets
         for i in 1...3 {
@@ -358,6 +366,24 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
             of: #"\$[a-zA-Z0-9]+"#,
             with: "X",
             options: .regularExpression)
+
+        // Clean up formatting issues
+        // Fix escaped apostrophes
+        parsed = parsed.replacingOccurrences(of: "\\'", with: "'")
+        
+        // Fix literal line breaks
+        parsed = parsed.replacingOccurrences(of: "\\r\\n", with: "\n")
+        parsed = parsed.replacingOccurrences(of: "\\n", with: "\n")
+        parsed = parsed.replacingOccurrences(of: "\\r", with: "\n")
+        
+        // Clean up excessive whitespace
+        parsed = parsed.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        
+        // Clean up multiple consecutive line breaks
+        parsed = parsed.replacingOccurrences(of: #"\n\s*\n"#, with: "\n\n", options: .regularExpression)
+        
+        // Trim whitespace from start and end
+        parsed = parsed.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return parsed
     }
@@ -546,6 +572,8 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
     }
 
     // Static database lookup functions
+    private static let logger = Logger(subsystem: "com.wowca.app", category: "Spell")
+    
     static func lookupSpellDurationFromDB(spellId: Int) -> String? {
         #if canImport(GRDB)
             guard let queue = DatabaseService.shared.dbQueue else { return nil }
@@ -565,7 +593,7 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
                     return nil
                 }
             } catch {
-                print("Error looking up spell duration for \(spellId): \(error)")
+                logger.error("❌ Error looking up spell duration for \(spellId): \(error.localizedDescription)")
                 return nil
             }
         #else
@@ -591,7 +619,7 @@ struct Spell: Codable, Identifiable, Equatable, Hashable {
                     return nil
                 }
             } catch {
-                print("Error looking up spell effect for \(spellId)s\(effectIndex): \(error)")
+                logger.error("❌ Error looking up spell effect for \(spellId)s\(effectIndex): \(error.localizedDescription)")
                 return nil
             }
         #else

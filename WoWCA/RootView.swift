@@ -21,7 +21,6 @@ struct RootView: View {
                 }
                 .onAppear {
                     logger.info("🔍 Search tab appeared")
-                    print("🔍 Search tab selected")
                 }
 
             FavoritesView(favoritesManager: favoritesManager)
@@ -30,7 +29,6 @@ struct RootView: View {
                 }
                 .onAppear {
                     logger.info("⭐ Favorites tab appeared")
-                    print("⭐ Favorites tab selected")
                 }
 
             RecentsView(recentsManager: recentsManager)
@@ -39,7 +37,6 @@ struct RootView: View {
                 }
                 .onAppear {
                     logger.info("🕒 Recent tab appeared")
-                    print("🕒 Recent tab selected")
                 }
 
             AboutView()
@@ -48,18 +45,15 @@ struct RootView: View {
                 }
                 .onAppear {
                     logger.info("ℹ️ About tab appeared")
-                    print("ℹ️ About tab selected")
                 }
         }
         .environment(favoritesManager)
         .environment(recentsManager)
         .onAppear {
             logger.info("📱 RootView TabView appeared")
-            print("📱 Main tab interface loaded")
         }
         .onDisappear {
             logger.info("👋 RootView TabView disappeared")
-            print("👋 Main tab interface unloaded")
         }
     }
 }

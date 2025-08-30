@@ -16,6 +16,7 @@ struct FavoritesView: View {
             contentView
                 .navigationTitle("Favorites")
                 .toolbar {
+                    #if os(iOS)
                     ToolbarItem(placement: .navigationBarTrailing) {
                         if !favoritesManager.isEmpty {
                             Text("\(favoritesManager.favoritesCount)")
@@ -23,6 +24,15 @@ struct FavoritesView: View {
                                 .font(.caption)
                         }
                     }
+                    #else
+                    ToolbarItem(placement: .primaryAction) {
+                        if !favoritesManager.isEmpty {
+                            Text("\(favoritesManager.favoritesCount)")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                    }
+                    #endif
                 }
                 .onAppear {
                     logger.info("⭐ FavoritesView appeared")

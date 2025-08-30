@@ -75,12 +75,12 @@ struct ItemRowView: View {
         }
         .padding(.vertical, 4)
         .onAppear {
-            logger.info("👁️ ItemRowView appeared for item [\(item.entry)] \(item.name)")
-            print("👁️ Row appeared: [\(item.entry)] \(item.name) (Quality: \(item.quality))")
+            #if DEBUG
+            logger.debug("👁️ ItemRowView appeared for item [\(item.entry)] \(item.name)")
+            #endif
         }
         .onTapGesture {
             logger.info("👆 ItemRowView tapped for item [\(item.entry)] \(item.name)")
-            print("👆 Row tapped: [\(item.entry)] \(item.name)")
         }
     }
 

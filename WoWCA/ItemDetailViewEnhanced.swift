@@ -165,8 +165,8 @@ struct ItemDetailViewEnhanced: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
             
-            // Categorize stats intelligently
-            let (primaryStats, secondaryStats, resistanceStats, specialStats) = categorizeStats()
+            // Categorize stats intelligently using improved grouping
+            let (primaryStats, offensiveStats, defensiveStats, resistanceStats) = categorizeStats()
             
             if !primaryStats.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
@@ -181,14 +181,27 @@ struct ItemDetailViewEnhanced: View {
                 .padding(.leading)
             }
             
-            if !secondaryStats.isEmpty {
+            if !offensiveStats.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Combat Ratings")
+                    Text("Offensive Stats")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
-                    ForEach(secondaryStats, id: \.self) { stat in
-                        statLine(icon: "target", color: .blue, text: stat)
+                    ForEach(offensiveStats, id: \.self) { stat in
+                        statLine(icon: "target", color: .red, text: stat)
+                    }
+                }
+                .padding(.leading)
+            }
+            
+            if !defensiveStats.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Defensive Stats")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    ForEach(defensiveStats, id: \.self) { stat in
+                        statLine(icon: "shield.fill", color: .blue, text: stat)
                     }
                 }
                 .padding(.leading)
@@ -202,19 +215,6 @@ struct ItemDetailViewEnhanced: View {
                         .foregroundStyle(.secondary)
                     ForEach(resistanceStats, id: \.self) { stat in
                         statLine(icon: "shield.lefthalf.filled", color: .orange, text: stat)
-                    }
-                }
-                .padding(.leading)
-            }
-            
-            if !specialStats.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Special Properties")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                    ForEach(specialStats, id: \.self) { stat in
-                        statLine(icon: "sparkles", color: .purple, text: stat)
                     }
                 }
                 .padding(.leading)
@@ -356,17 +356,8 @@ struct ItemDetailViewEnhanced: View {
                     }
                 }
                 
-                // All resistances with proper categorization
-                let resistances = getAllResistances()
-                ForEach(resistances, id: \.self) { resistance in
-                    HStack {
-                        Image(systemName: "sparkles.rectangle.stack")
-                            .foregroundStyle(resistanceColor(for: resistance))
-                            .font(.caption)
-                        Text(resistance)
-                            .fontWeight(.medium)
-                    }
-                }
+                // Note: Resistances removed from here as they're now properly categorized 
+                // in the Combat Statistics section above
             }
             .padding(.leading)
         }
@@ -550,6 +541,8 @@ struct ItemDetailViewEnhanced: View {
                     }
                 }
                 
+                // Note: Honor/PvP requirements commented out as not relevant for WoW Classic Era
+                /*
                 // Honor/PvP requirements
                 if let honorRank = item.required_honor_rank, honorRank > 0 {
                     HStack {
@@ -562,6 +555,7 @@ struct ItemDetailViewEnhanced: View {
                             .fontWeight(.medium)
                     }
                 }
+                */
                 
                 // City rank
                 if let cityRank = item.required_city_rank, cityRank > 0 {
@@ -647,6 +641,38 @@ struct ItemDetailViewEnhanced: View {
                         Text("Food Type:")
                             .foregroundStyle(.secondary)
                         Text(foodTypeName(foodType))
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                if item.isSetItem {
+                    HStack {
+                        Image(systemName: "square.stack.3d.down.right.fill")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Part of Item Set")
+                            .fontWeight(.medium)
+                            .foregroundStyle(.purple)
+                    }
+                }
+                
+                if item.startsQuest {
+                    HStack {
+                        Image(systemName: "exclamationmark.bubble.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Starts a Quest")
+                            .fontWeight(.medium)
+                            .foregroundStyle(.yellow)
+                    }
+                }
+                
+                if item.isReadable {
+                    HStack {
+                        Image(systemName: "book.fill")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Readable Item")
                             .fontWeight(.medium)
                     }
                 }
@@ -739,48 +765,66 @@ struct ItemDetailViewEnhanced: View {
     
     private func categorizeStats() -> ([String], [String], [String], [String]) {
         var primaryStats: [String] = []
-        var secondaryStats: [String] = []
+        var offensiveStats: [String] = []
+        var defensiveStats: [String] = []
         var resistanceStats: [String] = []
-        var specialStats: [String] = []
         
+        // Use computed properties from Item for better categorization
+        for (type, value) in item.primaryStats {
+            primaryStats.append("+\(value) \(statTypeName(type))")
+        }
+        
+        for (type, value) in item.offensiveStats {
+            offensiveStats.append("+\(value) \(statTypeName(type))")
+        }
+        
+        for (type, value) in item.defensiveStats {
+            defensiveStats.append("+\(value) \(statTypeName(type))")
+        }
+        
+        // Handle resistances separately (not included in computed properties)
+        let resistances = [
+            ("Holy", item.holy_res),
+            ("Fire", item.fire_res),
+            ("Nature", item.nature_res),
+            ("Frost", item.frost_res),
+            ("Shadow", item.shadow_res),
+            ("Arcane", item.arcane_res)
+        ]
+        
+        for (name, value) in resistances {
+            if let value = value, value > 0 {
+                resistanceStats.append("+\(value) \(name) Resistance")
+            }
+        }
+        
+        // Handle any remaining stats that don't fit the primary categories
         let allStats = [
             (item.stat_type1, item.stat_value1), (item.stat_type2, item.stat_value2),
             (item.stat_type3, item.stat_value3), (item.stat_type4, item.stat_value4),
             (item.stat_type5, item.stat_value5), (item.stat_type6, item.stat_value6),
-            (item.stat_type7, item.stat_value7), (item.stat_type8, item.stat_value8),
-            (item.stat_type9, item.stat_value9), (item.stat_type10, item.stat_value10)
+            (item.stat_type7, item.stat_value7)
         ]
         
+        let categorizedTypes = Set(item.primaryStats.map { $0.0 } + item.offensiveStats.map { $0.0 } + item.defensiveStats.map { $0.0 })
+        
         for (type, value) in allStats {
-            guard let type = type, let value = value, value != 0 else { continue }
-            
-            let statText = "+\(value) \(statTypeName(type))"
-            
-            // Categorize intelligently
-            switch type {
-            case 1, 2, 3, 4, 5, 6, 7: // Health, Mana, Agility, Strength, Intellect, Spirit, Stamina
-                primaryStats.append(statText)
-            case 12...31: // Defense through Spell Penetration (combat ratings)
-                secondaryStats.append(statText)
-            case 32...43: // Attack Power through Mastery Rating
-                secondaryStats.append(statText)
-            case 45...50: // Resistances
-                resistanceStats.append(statText)
-            default:
-                specialStats.append(statText)
-            }
+            guard let type = type, let value = value, value > 0, !categorizedTypes.contains(type) else { continue }
+            // Any remaining stats go to offensive (secondary) category
+            offensiveStats.append("+\(value) \(statTypeName(type))")
         }
         
-        return (primaryStats, secondaryStats, resistanceStats, specialStats)
+        return (primaryStats, offensiveStats, defensiveStats, resistanceStats)
     }
     
     private func getAllDamageTypes() -> [String] {
         var damages: [String] = []
-        let allDamages = [
-            (item.dmg_min2, item.dmg_max2, item.dmg_type2),
-            (item.dmg_min3, item.dmg_max3, item.dmg_type3),
-            (item.dmg_min4, item.dmg_max4, item.dmg_type4),
-            (item.dmg_min5, item.dmg_max5, item.dmg_type5)
+        // Note: dmg_type2-5 commented out as they're not relevant for WoW Classic Era
+        let allDamages: [(Int?, Int?, Int?)] = [
+            //(item.dmg_min2, item.dmg_max2, item.dmg_type2),
+            //(item.dmg_min3, item.dmg_max3, item.dmg_type3),
+            //(item.dmg_min4, item.dmg_max4, item.dmg_type4),
+            //(item.dmg_min5, item.dmg_max5, item.dmg_type5)
         ]
         
         for (minDmg, maxDmg, type) in allDamages {
@@ -804,7 +848,8 @@ struct ItemDetailViewEnhanced: View {
     }
     
     private func hasDefensiveStats() -> Bool {
-        return item.hasArmor || (item.block ?? 0) > 0 || !getAllResistances().isEmpty
+        // Note: Resistances removed as they're now handled in the Combat Statistics section
+        return item.hasArmor || (item.block ?? 0) > 0
     }
     
     private func hasSpellProperties() -> Bool {
@@ -861,21 +906,6 @@ struct ItemDetailViewEnhanced: View {
     }
 
     // MARK: - Reusable Sections from ItemDetailView
-    @ViewBuilder
-    private var statsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Stats", systemImage: "chart.bar.fill")
-                .font(.headline)
-                .foregroundStyle(.primary)
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(item.formattedStats, id: \.self) { stat in
-                    statLine(icon: "plus.circle.fill", color: .green, text: stat)
-                }
-            }
-            .padding(.leading)
-        }
-    }
-
     @ViewBuilder
     private var weaponStatsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1141,8 +1171,17 @@ struct ItemDetailViewEnhanced: View {
     }
 
     private func hasSpecialProperties() -> Bool {
-        return item.bindingDescription != nil || item.durationString != nil || 
-               item.isSetItem || item.startsQuest || item.isReadable
+        // Check for the properties that are actually displayed in enhancedSpecialPropertiesSection
+        let isTemporary = item.isTemporary
+        let hasDuration = item.duration != nil && item.duration! > 0
+        let hasProjectileStats = hasProjectileStats()
+        let hasFoodType = item.food_type != nil && item.food_type! > 0
+        let isSetItem = item.isSetItem
+        let startsQuest = item.startsQuest
+        let isReadable = item.isReadable
+        
+        return isTemporary || hasDuration || hasProjectileStats || hasFoodType 
+               || isSetItem || startsQuest || isReadable
     }
 
     private var spellsTab: some View {
@@ -1437,6 +1476,17 @@ struct ItemDetailViewEnhanced: View {
                 if let miscValue = miscValue, miscValue != 0 {
                     NerdStat(label: "Misc Value", value: miscValue)
                 }
+                
+                // Add missing numerical fields for this effect index
+                Group {
+                    if index == 1 {
+                        effectSpecificStats1(spell: spell)
+                    } else if index == 2 {
+                        effectSpecificStats2(spell: spell)
+                    } else if index == 3 {
+                        effectSpecificStats3(spell: spell)
+                    }
+                }
             }
             
             // Show damage range if available
@@ -1480,6 +1530,33 @@ struct ItemDetailViewEnhanced: View {
                     NerdStat(label: "Proc Charges", value: procCharges)
                 }
                 
+                // Casting and timing
+                if let castingTimeIndex = spell.castingTimeIndex, castingTimeIndex > 0 {
+                    NerdStat(label: "Cast Time Index", value: castingTimeIndex)
+                }
+                
+                if let speed = spell.speed, speed > 0 {
+                    NerdStat(label: "Speed", value: String(format: "%.1f", speed))
+                }
+                
+                // Stacking and charges
+                if let stackAmount = spell.stackAmount, stackAmount > 0 {
+                    NerdStat(label: "Stack Amount", value: stackAmount)
+                }
+                
+                // Mana costs
+                if let manaCostPerLevel = spell.manaCostPerLevel, manaCostPerLevel > 0 {
+                    NerdStat(label: "Mana/Level", value: manaCostPerLevel)
+                }
+                
+                if let manaPerSecond = spell.manaPerSecond, manaPerSecond > 0 {
+                    NerdStat(label: "Mana/Sec", value: manaPerSecond)
+                }
+                
+                if let manaPerSecondPerLevel = spell.manaPerSecondPerLevel, manaPerSecondPerLevel > 0 {
+                    NerdStat(label: "Mana/Sec/Level", value: manaPerSecondPerLevel)
+                }
+                
                 // Attributes and flags
                 if let attributes = spell.attributes, attributes > 0 {
                     NerdStat(label: "Attributes", value: "0x\(String(attributes, radix: 16))")
@@ -1489,13 +1566,33 @@ struct ItemDetailViewEnhanced: View {
                     NerdStat(label: "AttributesEx", value: "0x\(String(attributesEx, radix: 16))")
                 }
                 
+                if let attributesEx2 = spell.attributesEx2, attributesEx2 > 0 {
+                    NerdStat(label: "AttributesEx2", value: "0x\(String(attributesEx2, radix: 16))")
+                }
+                
+                if let attributesEx3 = spell.attributesEx3, attributesEx3 > 0 {
+                    NerdStat(label: "AttributesEx3", value: "0x\(String(attributesEx3, radix: 16))")
+                }
+                
+                if let attributesEx4 = spell.attributesEx4, attributesEx4 > 0 {
+                    NerdStat(label: "AttributesEx4", value: "0x\(String(attributesEx4, radix: 16))")
+                }
+                
                 // Stances and targeting
                 if let stances = spell.stances, stances > 0 {
                     NerdStat(label: "Stances", value: "0x\(String(stances, radix: 16))")
                 }
                 
+                if let stancesNot = spell.stancesNot, stancesNot > 0 {
+                    NerdStat(label: "Stances Not", value: "0x\(String(stancesNot, radix: 16))")
+                }
+                
                 if let targets = spell.targets, targets > 0 {
                     NerdStat(label: "Targets", value: "0x\(String(targets, radix: 16))")
+                }
+                
+                if let targetCreatureType = spell.targetCreatureType, targetCreatureType > 0 {
+                    NerdStat(label: "Target Creature", value: targetCreatureType)
                 }
                 
                 // Duration and range
@@ -1505,6 +1602,40 @@ struct ItemDetailViewEnhanced: View {
                 
                 if let rangeIndex = spell.rangeIndex, rangeIndex > 0 {
                     NerdStat(label: "Range Index", value: rangeIndex)
+                }
+                
+                // Equipment requirements
+                if let equippedItemClass = spell.equippedItemClass, equippedItemClass >= 0 {
+                    NerdStat(label: "Req Item Class", value: equippedItemClass)
+                }
+                
+                if let equippedItemSubClass = spell.equippedItemSubClassMask, equippedItemSubClass > 0 {
+                    NerdStat(label: "Req SubClass", value: "0x\(String(equippedItemSubClass, radix: 16))")
+                }
+                
+                if let equippedItemInventory = spell.equippedItemInventoryTypeMask, equippedItemInventory > 0 {
+                    NerdStat(label: "Req Inventory", value: "0x\(String(equippedItemInventory, radix: 16))")
+                }
+                
+                // Misc mechanics
+                if let dispel = spell.dispel, dispel > 0 {
+                    NerdStat(label: "Dispel Type", value: dispel)
+                }
+                
+                if let mechanic = spell.mechanic, mechanic > 0 {
+                    NerdStat(label: "Spell Mechanic", value: mechanic)
+                }
+                
+                if let powerType = spell.powerType, powerType > 0 {
+                    NerdStat(label: "Power Type", value: powerType)
+                }
+                
+                if let modalNextSpell = spell.modalNextSpell, modalNextSpell > 0 {
+                    NerdStat(label: "Modal Next", value: modalNextSpell)
+                }
+                
+                if let requiresShapeShift = spell.requiresShapeShift, requiresShapeShift > 0 {
+                    NerdStat(label: "Shapeshift Req", value: "0x\(String(requiresShapeShift, radix: 16))")
                 }
             }
         }
@@ -2170,15 +2301,31 @@ struct ItemDetailViewEnhanced: View {
     // MARK: - Enhanced Detail Helper Functions
     
     private func hasContentInfo() -> Bool {
-        return item.patch != nil || (item.description != nil && !item.description!.isEmpty)
+        // Check for meaningful patch information (> 0, not default)
+        let hasPatch = item.patch != nil && item.patch! > 0
+        // Check for non-empty description
+        let hasDescription = item.description != nil && !item.description!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        return hasPatch || hasDescription
     }
     
     private func hasPricingInfo() -> Bool {
-        return item.buy_price != nil || item.sell_price != nil || item.min_money_loot != nil || item.max_money_loot != nil
+        // Check for meaningful pricing data (> 0, not default)
+        let hasBuyPrice = item.buy_price != nil && item.buy_price! > 0
+        let hasSellPrice = item.sell_price != nil && item.sell_price! > 0
+        let hasMinLoot = item.min_money_loot != nil && item.min_money_loot! > 0
+        let hasMaxLoot = item.max_money_loot != nil && item.max_money_loot! > 0
+        
+        return hasBuyPrice || hasSellPrice || hasMinLoot || hasMaxLoot
     }
     
     private func hasRandomProperties() -> Bool {
-        return (item.random_property ?? 0) != 0 || (item.set_id ?? 0) > 0 || (item.disenchant_id ?? 0) > 0
+        // Check for meaningful random property data (> 0, not default)
+        let hasRandomProperty = item.random_property != nil && item.random_property! > 0
+        let hasSetId = item.set_id != nil && item.set_id! > 0
+        let hasDisenchantId = item.disenchant_id != nil && item.disenchant_id! > 0
+        
+        return hasRandomProperty || hasSetId || hasDisenchantId
     }
     
     private func hasExtraFlags() -> Bool {
@@ -2343,18 +2490,7 @@ struct ItemDetailViewEnhanced: View {
                 .foregroundStyle(.primary)
 
             VStack(alignment: .leading, spacing: 4) {
-                if let disenchantId = item.disenchant_id, disenchantId > 0 {
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.cyan)
-                            .font(.caption)
-                        Text("Disenchant ID:")
-                            .foregroundStyle(.secondary)
-                        Text("\(disenchantId)")
-                            .fontWeight(.medium)
-                    }
-                }
-
+                // Only show random properties as they're relevant for WoW Classic Era
                 if let randomProp = item.random_property, randomProp != 0 {
                     HStack {
                         Image(systemName: "dice")
@@ -2363,6 +2499,20 @@ struct ItemDetailViewEnhanced: View {
                         Text("Random Properties:")
                             .foregroundStyle(.secondary)
                         Text("ID \(randomProp)")
+                            .fontWeight(.medium)
+                    }
+                }
+                
+                // Note: Other loot properties commented out as not relevant for WoW Classic Era
+                /*
+                if let disenchantId = item.disenchant_id, disenchantId > 0 {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.cyan)
+                            .font(.caption)
+                        Text("Disenchant ID:")
+                            .foregroundStyle(.secondary)
+                        Text("\(disenchantId)")
                             .fontWeight(.medium)
                     }
                 }
@@ -2402,6 +2552,7 @@ struct ItemDetailViewEnhanced: View {
                             .fontWeight(.medium)
                     }
                 }
+                */
             }
             .padding(.leading)
         }
@@ -2447,12 +2598,18 @@ struct ItemDetailViewEnhanced: View {
     }
 
     private func hasBindingProperties() -> Bool {
-        return item.bonding != nil || item.area_bound != nil || item.map_bound != nil
-            || item.other_team_entry != nil
+        // Note: area_bound, map_bound, and other_team_entry commented out as not relevant for WoW Classic Era
+        return item.bonding != nil // || item.area_bound != nil || item.map_bound != nil
+            // || item.other_team_entry != nil
     }
 
     private func hasQuestProperties() -> Bool {
-        return item.isQuestItem || item.start_quest != nil || item.page_text != nil
+        // Check for meaningful quest data (> 0, not default)
+        let hasStartQuest = item.start_quest != nil && item.start_quest! > 0
+        let hasPageText = item.page_text != nil && item.page_text! > 0
+        let hasQuestFlags = item.isQuestItem
+        
+        return hasStartQuest || hasPageText || hasQuestFlags
     }
 
     private func hasLootProperties() -> Bool {
@@ -2484,8 +2641,15 @@ struct ItemDetailViewEnhanced: View {
     }
 
     private func hasDisplayProperties() -> Bool {
-        return item.display_id != nil || item.material != nil || item.sheath != nil
-            || item.inventory_type != nil
+        // Only show if there are meaningful display/technical properties
+        // display_id and inventory_type are usually always present, so be more selective
+        let hasSheath = item.sheath != nil && item.sheath! > 0
+        let hasMaterial = item.material != nil && item.material! > 0
+        let hasDisplayId = item.display_id != nil && item.display_id! > 0
+        let hasInventoryType = item.inventory_type != nil && item.inventory_type! > 0
+        
+        // Show section if we have at least 2 meaningful properties, or sheath/material info
+        return hasSheath || hasMaterial || (hasDisplayId && hasInventoryType)
     }
 
     private func hasItemFlags() -> Bool {
@@ -2493,7 +2657,8 @@ struct ItemDetailViewEnhanced: View {
     }
 
     private func hasLocationRestrictions() -> Bool {
-        return item.area_bound != nil || item.map_bound != nil || item.other_team_entry != nil
+        // Note: area_bound, map_bound, and other_team_entry commented out as not relevant for WoW Classic Era
+        return false // item.area_bound != nil || item.map_bound != nil || item.other_team_entry != nil
     }
 
     private func hasAdvancedProperties() -> Bool {
@@ -2905,6 +3070,8 @@ struct ItemDetailViewEnhanced: View {
                 .foregroundStyle(.red)
 
             VStack(alignment: .leading, spacing: 4) {
+                // Note: Area/Map bound and other team entry commented out as not relevant for WoW Classic Era
+                /*
                 if let areaBound = item.area_bound, areaBound > 0 {
                     HStack {
                         Image(systemName: "location.circle")
@@ -2934,6 +3101,7 @@ struct ItemDetailViewEnhanced: View {
                             .fontWeight(.medium)
                     }
                 }
+                */
             }
             .padding(.leading)
         }
@@ -3229,8 +3397,9 @@ struct ItemDetailViewEnhanced: View {
                 DatabaseField("Random Property", value: item.random_property)
                 DatabaseField("Set ID", value: item.set_id)
                 DatabaseField("Max Durability", value: item.max_durability)
-                DatabaseField("Area Bound", value: item.area_bound)
-                DatabaseField("Map Bound", value: item.map_bound)
+                // Note: Area/Map bound and other team entry commented out as not relevant for WoW Classic Era
+                // DatabaseField("Area Bound", value: item.area_bound)
+                // DatabaseField("Map Bound", value: item.map_bound)
                 DatabaseField("Duration", value: item.duration)
                 DatabaseField("Bag Family", value: item.bag_family)
                 DatabaseField("Disenchant ID", value: item.disenchant_id)
@@ -3238,7 +3407,7 @@ struct ItemDetailViewEnhanced: View {
                 DatabaseField("Min Money Loot", value: item.min_money_loot)
                 DatabaseField("Max Money Loot", value: item.max_money_loot)
                 DatabaseField("Extra Flags", value: item.extra_flags)
-                DatabaseField("Other Team Entry", value: item.other_team_entry)
+                // DatabaseField("Other Team Entry", value: item.other_team_entry)
             }
         }
     }
@@ -3320,10 +3489,11 @@ struct ItemDetailViewEnhanced: View {
     private func classNames(for classFlags: Int) -> String {
         if classFlags == -1 { return "All Classes" }
 
+        // Classic WoW 1.15.7 classes only (no Death Knight, Monk, Demon Hunter)
         let classMap: [Int: String] = [
             1: "Warrior", 2: "Paladin", 4: "Hunter", 8: "Rogue",
-            16: "Priest", 32: "Death Knight", 64: "Shaman", 128: "Mage",
-            256: "Warlock", 512: "Monk", 1024: "Druid", 2048: "Demon Hunter",
+            16: "Priest", 64: "Shaman", 128: "Mage",
+            256: "Warlock", 1024: "Druid",
         ]
 
         var allowedClasses: [String] = []
@@ -3340,10 +3510,10 @@ struct ItemDetailViewEnhanced: View {
     private func raceNames(for raceFlags: Int) -> String {
         if raceFlags == -1 { return "All Races" }
 
+        // Classic WoW 1.15.7 races only (original 8 races)
         let raceMap: [Int: String] = [
             1: "Human", 2: "Orc", 4: "Dwarf", 8: "Night Elf",
             16: "Undead", 32: "Tauren", 64: "Gnome", 128: "Troll",
-            512: "Blood Elf", 1024: "Draenei",
         ]
 
         var allowedRaces: [String] = []
@@ -3764,6 +3934,46 @@ struct ItemDetailViewEnhanced: View {
         
         logger.info("✅ Favorite toggled: [\(item.entry)] \(item.name) now \(isFavorite ? "favorited" : "unfavorited")")
         print("✅ Favorite status updated: [\(item.entry)] \(item.name) = \(isFavorite)")
+    }
+    
+    // MARK: - Helper functions for effect-specific stats
+    @ViewBuilder
+    private func effectSpecificStats1(spell: Spell) -> some View {
+        NerdStat(label: "Effect 1 Amplitude", value: spell.effectAmplitude1)
+        NerdStat(label: "Effect 1 Multiple Value", value: spell.effectMultipleValue1)
+        NerdStat(label: "Effect 1 Chain Target", value: spell.effectChainTarget1)
+        NerdStat(label: "Effect 1 Target A", value: spell.effectImplicitTargetA1)
+        NerdStat(label: "Effect 1 Target B", value: spell.effectImplicitTargetB1)
+        NerdStat(label: "Effect 1 Radius Index", value: spell.effectRadiusIndex1)
+        if let aura = spell.effectApplyAuraName1, aura > 0 {
+            NerdStat(label: "Effect 1 Aura Type", value: aura)
+        }
+    }
+    
+    @ViewBuilder
+    private func effectSpecificStats2(spell: Spell) -> some View {
+        NerdStat(label: "Effect 2 Amplitude", value: spell.effectAmplitude2)
+        NerdStat(label: "Effect 2 Multiple Value", value: spell.effectMultipleValue2)
+        NerdStat(label: "Effect 2 Chain Target", value: spell.effectChainTarget2)
+        NerdStat(label: "Effect 2 Target A", value: spell.effectImplicitTargetA2)
+        NerdStat(label: "Effect 2 Target B", value: spell.effectImplicitTargetB2)
+        NerdStat(label: "Effect 2 Radius Index", value: spell.effectRadiusIndex2)
+        if let aura = spell.effectApplyAuraName2, aura > 0 {
+            NerdStat(label: "Effect 2 Aura Type", value: aura)
+        }
+    }
+    
+    @ViewBuilder
+    private func effectSpecificStats3(spell: Spell) -> some View {
+        NerdStat(label: "Effect 3 Amplitude", value: spell.effectAmplitude3)
+        NerdStat(label: "Effect 3 Multiple Value", value: spell.effectMultipleValue3)
+        NerdStat(label: "Effect 3 Chain Target", value: spell.effectChainTarget3)
+        NerdStat(label: "Effect 3 Target A", value: spell.effectImplicitTargetA3)
+        NerdStat(label: "Effect 3 Target B", value: spell.effectImplicitTargetB3)
+        NerdStat(label: "Effect 3 Radius Index", value: spell.effectRadiusIndex3)
+        if let aura = spell.effectApplyAuraName3, aura > 0 {
+            NerdStat(label: "Effect 3 Aura Type", value: aura)
+        }
     }
 }
 

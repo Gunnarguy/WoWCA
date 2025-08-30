@@ -136,6 +136,65 @@ struct Item: Identifiable {
     var spells: [Spell] = []
 
     var id: Int64 { entry }
+    
+    // MARK: - Computed Properties for Stat Grouping
+    
+    /// Primary stats (Strength, Agility, Stamina, Intellect, Spirit)
+    var primaryStats: [(Int, Int)] {
+        let allStats = [
+            (stat_type1, stat_value1), (stat_type2, stat_value2),
+            (stat_type3, stat_value3), (stat_type4, stat_value4),
+            (stat_type5, stat_value5), (stat_type6, stat_value6),
+            (stat_type7, stat_value7)
+        ]
+        
+        return allStats.compactMap { (type, value) in
+            guard let type = type, let value = value, value > 0 else { return nil }
+            // Primary stats: Strength (4), Agility (3), Stamina (7), Intellect (5), Spirit (6)
+            if [3, 4, 5, 6, 7].contains(type) {
+                return (type, value)
+            }
+            return nil
+        }
+    }
+    
+    /// Offensive stats (Attack Power, Spell Power, Crit, Hit, etc.)
+    var offensiveStats: [(Int, Int)] {
+        let allStats = [
+            (stat_type1, stat_value1), (stat_type2, stat_value2),
+            (stat_type3, stat_value3), (stat_type4, stat_value4),
+            (stat_type5, stat_value5), (stat_type6, stat_value6),
+            (stat_type7, stat_value7)
+        ]
+        
+        return allStats.compactMap { (type, value) in
+            guard let type = type, let value = value, value > 0 else { return nil }
+            // Offensive stats: Attack Power (38), Spell Power (45), Crit (32), Hit (31), Haste (36)
+            if [31, 32, 36, 38, 45].contains(type) {
+                return (type, value)
+            }
+            return nil
+        }
+    }
+    
+    /// Defensive stats (Armor, Defense, Dodge, Parry, Block, Resistances)
+    var defensiveStats: [(Int, Int)] {
+        let allStats = [
+            (stat_type1, stat_value1), (stat_type2, stat_value2),
+            (stat_type3, stat_value3), (stat_type4, stat_value4),
+            (stat_type5, stat_value5), (stat_type6, stat_value6),
+            (stat_type7, stat_value7)
+        ]
+        
+        return allStats.compactMap { (type, value) in
+            guard let type = type, let value = value, value > 0 else { return nil }
+            // Defensive stats: Defense (12), Dodge (13), Parry (14), Block (15), plus resistances
+            if [12, 13, 14, 15].contains(type) {
+                return (type, value)
+            }
+            return nil
+        }
+    }
 }
 
 extension Item: Codable {
@@ -563,10 +622,14 @@ extension Item {
             case 6: return "Polearm"
             case 7: return "Sword"
             case 8: return "Two-Handed Sword"
-            case 10: return "Dagger"
+            case 10: return "Staff"  // Fixed: Atiesh is a staff, not dagger
             case 13: return "Fist Weapon"
-            case 15: return "Wand"
-            case 16: return "Fishing Pole"
+            case 15: return "Dagger"  // Fixed: Daggers are subclass 15
+            case 16: return "Thrown"
+            case 17: return "Spear"
+            case 18: return "Crossbow"
+            case 19: return "Wand"
+            case 20: return "Fishing Pole"
             default: return "Weapon"
             }
         case 4:  // Armor

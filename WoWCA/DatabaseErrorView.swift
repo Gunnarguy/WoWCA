@@ -52,7 +52,6 @@ struct DatabaseErrorView: View {
     
     private func retryDatabaseInit() {
         logger.info("🔄 User initiated database retry")
-        print("🔄 Retrying database initialization...")
         
         isRetrying = true
         
@@ -65,7 +64,6 @@ struct DatabaseErrorView: View {
                 try DatabaseService.shared.configure()
                 
                 logger.info("✅ Database retry successful")
-                print("✅ Database retry successful")
                 
                 // Restart the app by triggering a scene refresh
                 // Note: In a real app, you might want to implement a more sophisticated
@@ -73,7 +71,6 @@ struct DatabaseErrorView: View {
                 
             } catch {
                 logger.error("❌ Database retry failed: \(error.localizedDescription)")
-                print("❌ Database retry failed: \(error)")
             }
             
             await MainActor.run {

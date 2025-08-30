@@ -382,10 +382,7 @@ struct AboutView: View {
                     ) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(
-                                "Unofficial fan-made reference. Not affiliated with Blizzard Entertainment."
-                            )
-                            Text(
-                                "World of Warcraft is a trademark or registered trademark of Blizzard Entertainment, Inc. in the U.S. and/or other countries."
+                                "World of Warcraft ©2004 Blizzard Entertainment, Inc. All rights reserved. World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This is an unofficial fan-made application and is not affiliated with or endorsed by Blizzard Entertainment."
                             )
                         }
                         .font(.footnote)

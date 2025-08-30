@@ -18,42 +18,45 @@ struct OnboardingView: View {
             .ignoresSafeArea()
             
             TabView {
-                // Page 1: Complete Database
+                // Page 1: Search Feature
                 OnboardingPage(
-                    title: "Complete WoW Classic Database",
-                    subtitle: "Search through thousands of items, spells, and stats completely offline",
+                    title: "Powerful Search",
+                    subtitle: "Find any World of Warcraft Classic item quickly and easily",
                     systemImage: "magnifyingglass.circle.fill",
                     color: .blue,
                     features: [
-                        "🔍 Fast text search with auto-complete",
-                        "🔢 Direct item ID lookup",
-                        "⚡ Instant results with FTS5 search"
+                        "� Search by item name (e.g., \"Sulfuras\")",
+                        "🔢 Direct lookup by item ID (e.g., \"19019\")",
+                        "⚡ Instant results with full-text search",
+                        "📊 Complete item stats and details"
                     ]
                 )
                 
-                // Page 2: Privacy & Offline
-                OnboardingPage(
-                    title: "Privacy First & Offline",
-                    subtitle: "No tracking, no analytics, no network calls - all data stays on your device",
-                    systemImage: "lock.shield.fill",
-                    color: .green,
-                    features: [
-                        "🔒 Zero data collection or tracking",
-                        "📱 Works completely offline",
-                        "🚫 No permissions required"
-                    ]
-                )
-                
-                // Page 3: Personalization
+                // Page 2: Favorites Feature
                 OnboardingPage(
                     title: "Save Your Favorites",
-                    subtitle: "Bookmark items to build gear lists, wishlists, and track your progress",
+                    subtitle: "Build your personal collection of important items",
                     systemImage: "star.circle.fill",
                     color: .orange,
                     features: [
-                        "⭐ Save favorite items",
-                        "🕒 Track recently viewed items",
-                        "📝 Build personalized gear lists"
+                        "⭐ Bookmark items for quick access",
+                        "📝 Build gear wishlists and shopping lists",
+                        "� All favorites saved locally on your device",
+                        "� Sync across app launches"
+                    ]
+                )
+                
+                // Page 3: Recent History Feature
+                OnboardingPage(
+                    title: "Recent History",
+                    subtitle: "Keep track of items you've viewed recently",
+                    systemImage: "clock.circle.fill",
+                    color: .green,
+                    features: [
+                        "🕒 Automatic history of viewed items",
+                        "� Pick up where you left off",
+                        "🗑️ Clear history when needed",
+                        "⚡ Quick access to recent searches"
                     ],
                     isLast: true
                 ) {
@@ -73,8 +76,10 @@ struct OnboardingView: View {
                     }
                 }
             }
+            #if os(iOS)
             .tabViewStyle(PageTabViewStyle())
             .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
+            #endif
         }
     }
 }

@@ -23,13 +23,13 @@ struct WoWCAApp: App {
 
         // Enable detailed Core Data logging if needed
         #if DEBUG
-            print("🔧 DEBUG mode enabled - verbose logging active")
+            logger.debug("🔧 DEBUG mode enabled - verbose logging active")
             #if os(iOS)
-            print("📱 Device: \(UIDevice.current.model)")
-            print("📱 iOS Version: \(UIDevice.current.systemVersion)")
+            logger.debug("📱 Device: \(UIDevice.current.model)")
+            logger.debug("📱 iOS Version: \(UIDevice.current.systemVersion)")
             #endif
-            print("📱 App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
-            print(
+            logger.debug("📱 App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
+            logger.debug(
                 "📱 App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")"
             )
         #endif
@@ -57,8 +57,10 @@ struct WoWCAApp: App {
 
         } catch {
             logger.error("❌ App initialization failed: \(error.localizedDescription)")
-            print("❌ DB init failed: \(error)")
-            print("❌ Error details: \(String(describing: error))")
+            #if DEBUG
+            logger.debug("❌ DB init failed: \(error)")
+            logger.debug("❌ Error details: \(String(describing: error))")
+            #endif
         }
 
         logger.info("🏁 WoWCAApp initialization complete")
@@ -79,21 +81,23 @@ struct WoWCAApp: App {
                 .onAppear {
                     logger.info("🖼️ Presenting main UI with view model")
                     logger.info("🎬 Main UI appeared")
-                    print("🖼️ Presenting main UI with view model")
-                    print("🎬 RootView appeared - app is ready for user interaction")
-                    print("🔧 App lifecycle: FOREGROUND_ACTIVE")
+                    #if DEBUG
+                    logger.debug("🔧 App lifecycle: FOREGROUND_ACTIVE")
+                    #endif
                 }
                 .onDisappear {
                     logger.info("👋 Main UI disappeared")
-                    print("👋 RootView disappeared")
-                    print("🔧 App lifecycle: BACKGROUND")
+                    #if DEBUG
+                    logger.debug("🔧 App lifecycle: BACKGROUND")
+                    #endif
                 }
             } else {
                 DatabaseErrorView()
                     .onAppear {
                         logger.error("❌ Showing error state - no view model available")
-                        print("❌ Error view appeared - database failed to load")
-                        print("🔧 App state: ERROR - Database initialization failed")
+                        #if DEBUG
+                        logger.debug("🔧 App state: ERROR - Database initialization failed")
+                        #endif
                     }
             }
         }

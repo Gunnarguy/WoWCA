@@ -35,12 +35,19 @@ The project includes a modern SwiftUI client and a fully reproducible data build
 - **100% Offline Access**: All item and spell data is stored locally. No network connection required.
 - **Multi-Platform**: Designed for iOS, with full support for iPadOS and visionOS multitasking and layouts.
 - **Comprehensive Item Details**: View stats, damage, speed, armor, resistances, durability, level requirements, and class/race restrictions.
-- **Detailed Spell Information**: See spell effects, proc chances ("Chance on Hit"), and "Use:" abilities tied to items.
+- **Detailed Spell Information**: Complete spell effects with proper variable substitution, proc chances, and comprehensive numerical data in the enhanced spells tab.
+- **Classic WoW Accuracy**: Content properly filtered for Classic WoW 1.15.7 - no expansion classes or races shown.
+- **Favorites & Recents**: Save favorite items and track recently viewed items for quick access.
+- **Enhanced User Experience**: Smooth navigation, fixed recent items functionality, and clean spell description formatting.
 - **Advanced Search**:
-  - **Prefix Search**: Instantly find items by typing the first few letters of their name (e.g., `sulfu` for Sulfuras).
-  - **Wildcard Search**: Use `*` for broader matching (e.g., `gladiat*`).
-  - **Exact ID Lookup**: Search directly for an item's numerical ID (e.g., `19019`).
-  - **Spell Text Search**: Find items with specific effects (e.g., `chance on hit` or `restores mana`).
+  - **Smart Search**: Comprehensive multi-strategy search that finds items by name, stats, spell effects, quality, and equipment type
+  - **Stat-Based Search**: Find items by stats like "spell crit", "stamina", "strength", or "+healing"
+  - **Effect-Based Search**: Search for specific spell effects like "chance on hit", "extra attack", "proc", or "mana restore"
+  - **Prefix Search**: Instantly find items by typing the first few letters of their name (e.g., `sulfu` for Sulfuras)
+  - **Wildcard Search**: Use `*` for broader matching (e.g., `gladiat*`)
+  - **Exact ID Lookup**: Search directly for an item's numerical ID (e.g., `19019`)
+  - **Quality Search**: Find items by rarity like "epic", "rare", "uncommon"
+  - **Equipment Type Search**: Search by item type like "staff", "dagger", "trinket"
 - **Privacy-Focused**: No analytics, no trackers, no ads, and no data ever leaves your device.
 - **Reproducible & Transparent Build**: The entire database is built using a deterministic script, ensuring full transparency from public data sources to the final app.
 - **Modern Tech Stack**: Built with SwiftUI, the actor model for safe database access, and modern structured concurrency.

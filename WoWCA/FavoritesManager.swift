@@ -34,17 +34,21 @@ final class FavoritesManager {
                 logger.info("➖ Removed item \(item.entry) from favorites")
                 print("➖ Removed from favorites: \(item.name)")
                 
-                // Provide haptic feedback
+                // Provide haptic feedback on iOS
+                #if os(iOS)
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                 impactFeedback.impactOccurred()
+                #endif
             } else {
                 try await repository.addFavorite(itemId: item.entry)
                 logger.info("➕ Added item \(item.entry) to favorites")
                 print("➕ Added to favorites: \(item.name)")
                 
-                // Provide haptic feedback
+                // Provide haptic feedback on iOS
+                #if os(iOS)
                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                 impactFeedback.impactOccurred()
+                #endif
             }
             
             // Reload favorites list
@@ -65,9 +69,11 @@ final class FavoritesManager {
             try await repository.addFavorite(itemId: item.entry)
             await loadFavorites()
             
-            // Provide haptic feedback
+            // Provide haptic feedback on iOS
+            #if os(iOS)
             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
             impactFeedback.impactOccurred()
+            #endif
             
             logger.info("✅ Successfully added favorite")
             print("✅ Favorite added successfully")
@@ -86,9 +92,11 @@ final class FavoritesManager {
             try await repository.removeFavorite(itemId: item.entry)
             await loadFavorites()
             
-            // Provide haptic feedback
+            // Provide haptic feedback on iOS
+            #if os(iOS)
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
             impactFeedback.impactOccurred()
+            #endif
             
             logger.info("✅ Successfully removed favorite")
             print("✅ Favorite removed successfully")
