@@ -95,7 +95,9 @@ final class ItemSearchViewModel {
             print("🗄️ Searching database...")
             let searchStart = Date()
 
-            let rawItems = try await self.repository.search(rawQuery: current)
+            // Use higher limit for class searches to show more gear variety
+            let searchLimit = isClassSearch(query: current) ? 200 : 50
+            let rawItems = try await self.repository.search(rawQuery: current, limit: searchLimit)
 
             let searchDuration = Date().timeIntervalSince(searchStart)
             self.logger.info(
@@ -142,5 +144,12 @@ final class ItemSearchViewModel {
             self.logger.info("🏁 Search completed for query: '\(current)'")
             print("🏁 Search finished for: '\(current)'")
         }
+    }
+    
+    // Helper function to detect if a query is a class search
+    private func isClassSearch(query: String) -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let classNames = ["warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid"]
+        return classNames.contains(trimmed)
     }
 }

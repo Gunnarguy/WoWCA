@@ -99,12 +99,26 @@ import os.log
                     }
                 }
                 
-                // Strategy 5: Class/Equipment type search (for queries like "sword", "staff", "plate")
+                // Strategy 5: Equipment type search (for queries like "sword", "staff", "plate")
                 if allResults.count < limit {
                     let equipmentResults = try performEquipmentTypeSearch(db: db, query: trimmed, limit: limit - allResults.count)
                     logger.info("⚔️ Equipment type search returned \(equipmentResults.count) items")
                     
                     for item in equipmentResults {
+                        if seenEntries.insert(item.entry).inserted {
+                            allResults.append(item)
+                        }
+                    }
+                }
+                
+                // Strategy 6: Class-based search (for queries like "paladin", "warrior", "priest")
+                if allResults.count < limit {
+                    // Use higher limit for class searches since users want to see all gear for their class
+                    let classSearchLimit = max(limit, 200) // At least 200 items for class searches
+                    let classResults = try performClassBasedSearch(db: db, query: trimmed, limit: classSearchLimit - allResults.count)
+                    logger.info("🛡️ Class-based search returned \(classResults.count) items")
+                    
+                    for item in classResults {
                         if seenEntries.insert(item.entry).inserted {
                             allResults.append(item)
                         }
@@ -436,6 +450,64 @@ import os.log
                 SELECT * FROM items
                 WHERE \(whereClause)
                 ORDER BY item_level DESC, quality DESC
+                LIMIT ?
+                """
+            
+            return try Item.fetchAll(db, sql: sql, arguments: [limit])
+        }
+        
+        /// Perform class-based search for queries like "paladin", "warrior", etc.
+        private func performClassBasedSearch(db: Database, query: String, limit: Int) throws -> [Item] {
+            let lowercaseQuery = query.lowercased()
+            var conditions: [String] = []
+            
+            // Class restrictions mapping - prioritize exact class matches over bitmask matches
+            if lowercaseQuery.contains("warrior") {
+                conditions.append("(allowable_class = 1 OR (allowable_class > 0 AND allowable_class & 1 = 1))") // Warrior
+            }
+            if lowercaseQuery.contains("paladin") {
+                conditions.append("(allowable_class = 2 OR (allowable_class > 0 AND allowable_class & 2 = 2))") // Paladin
+            }
+            if lowercaseQuery.contains("hunter") {
+                conditions.append("(allowable_class = 4 OR (allowable_class > 0 AND allowable_class & 4 = 4))") // Hunter
+            }
+            if lowercaseQuery.contains("rogue") {
+                conditions.append("(allowable_class = 8 OR (allowable_class > 0 AND allowable_class & 8 = 8))") // Rogue
+            }
+            if lowercaseQuery.contains("priest") {
+                conditions.append("(allowable_class = 16 OR (allowable_class > 0 AND allowable_class & 16 = 16))") // Priest
+            }
+            if lowercaseQuery.contains("shaman") {
+                conditions.append("(allowable_class = 64 OR (allowable_class > 0 AND allowable_class & 64 = 64))") // Shaman
+            }
+            if lowercaseQuery.contains("mage") {
+                conditions.append("(allowable_class = 128 OR (allowable_class > 0 AND allowable_class & 128 = 128))") // Mage
+            }
+            if lowercaseQuery.contains("warlock") {
+                conditions.append("(allowable_class = 256 OR (allowable_class > 0 AND allowable_class & 256 = 256))") // Warlock
+            }
+            if lowercaseQuery.contains("druid") {
+                conditions.append("(allowable_class = 1024 OR (allowable_class > 0 AND allowable_class & 1024 = 1024))") // Druid
+            }
+            
+            guard !conditions.isEmpty else { return [] }
+            
+            let whereClause = conditions.joined(separator: " OR ")
+            let sql = """
+                SELECT * FROM items
+                WHERE \(whereClause)
+                ORDER BY 
+                    CASE 
+                        -- Prioritize class-specific items (exact match) over multi-class items
+                        WHEN allowable_class IN (1, 2, 4, 8, 16, 64, 128, 256, 1024) THEN 1
+                        ELSE 2
+                    END,
+                    CASE WHEN quality = 4 THEN 1 -- Epic first among tier
+                         WHEN quality = 3 THEN 2 -- Rare second
+                         WHEN quality = 5 THEN 3 -- Legendary third (usually multi-class)
+                         ELSE 4 END,
+                    item_level DESC,
+                    name ASC
                 LIMIT ?
                 """
             

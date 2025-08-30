@@ -119,7 +119,7 @@ struct SearchView: View {
                 logger.info("👋 SearchView disappeared")
                 print("👋 SearchView disappeared")
             }
-                        .searchable(text: $vm.query, prompt: "Search by name, stats, spell effects...")
+                        .searchable(text: $vm.query, prompt: "Search by name, stats, effects, class...")
             .onChange(of: vm.query) { oldValue, newValue in
                 logger.info("📝 Search text changed from '\(oldValue)' to '\(newValue)'")
                 print("📝 Search input: '\(oldValue)' -> '\(newValue)'")
