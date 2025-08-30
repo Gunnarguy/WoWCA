@@ -16,13 +16,30 @@ struct SearchView: View {
         NavigationStack {
             Group {
                 if vm.query.isEmpty {
-                    ContentUnavailableView(
-                        "Search items", systemImage: "magnifyingglass",
-                        description: Text("Type at least 1 character")
-                    )
+                    ContentUnavailableView {
+                        Label("Search WoW Classic Items", systemImage: "magnifyingglass")
+                    } description: {
+                        VStack(spacing: 8) {
+                            Text("Search through thousands of World of Warcraft Classic items")
+                                .font(.body)
+                            
+                            Text("Try searching for:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("• Item names: \"thunderfury\", \"sulfuras\"")
+                                Text("• Item IDs: \"19019\", \"17182\"")
+                                
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
                     .onAppear {
-                        logger.info("🔍 Empty state view appeared")
-                        print("🔍 Showing empty search state")
+                        logger.info("🔍 Enhanced empty state view appeared")
+                        print("🔍 Showing enhanced empty search state")
                     }
                 } else if vm.isSearching {
                     ProgressView()
@@ -32,14 +49,31 @@ struct SearchView: View {
                             print("⏳ Showing search loading state")
                         }
                 } else if vm.results.isEmpty {
-                    ContentUnavailableView(
-                        "No results",
-                        systemImage: "exclamationmark.magnifyingglass",
-                        description: Text("No matches for \"\(vm.query)\"")
-                    )
+                    ContentUnavailableView {
+                        Label("No Results Found", systemImage: "exclamationmark.magnifyingglass")
+                    } description: {
+                        VStack(spacing: 8) {
+                            Text("No items match \"\(vm.query)\"")
+                                .font(.body)
+                            
+                            Text("Try adjusting your search:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("• Check spelling")
+                                Text("• Use fewer words")
+                                Text("• Try item ID numbers")
+                                Text("• Search for partial names")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
                     .onAppear {
-                        logger.info("📭 No results state view appeared for query: '\(vm.query)'")
-                        print("📭 Showing no results state for: '\(vm.query)'")
+                        logger.info("📭 Enhanced no results state view appeared for query: '\(vm.query)'")
+                        print("📭 Showing enhanced no results state for: '\(vm.query)'")
                     }
                 } else {
                     List(vm.results) { item in

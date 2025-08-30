@@ -7,6 +7,13 @@ struct ItemDetailViewEnhanced: View {
     @State private var loadedSpells: [Int: Spell] = [:]
     @State private var isLoadingSpells = false
     @State private var spellLoadError: String? = nil
+    @State private var isFavorite = false
+    @State private var isFavoriteLoading = false
+    
+    // Environment objects for user data management
+    @Environment(\.dismiss) private var dismiss
+    @Environment(FavoritesManager.self) private var favoritesManager: FavoritesManager
+    @Environment(RecentsManager.self) private var recentsManager: RecentsManager
     
     private let logger = Logger(subsystem: "com.wowca.app", category: "ItemDetailEnhanced")
 
@@ -41,8 +48,19 @@ struct ItemDetailViewEnhanced: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                favoriteButton
+            }
+        }
         .onAppear {
             logger.info("👁️ ItemDetailViewEnhanced appeared for item [\(item.entry)] \(item.name)")
+            
+            // Add to recent items when viewed
+            Task {
+                await recentsManager.addToRecent(item: item)
+                await loadFavoriteStatus()
+            }
         }
         .task {
             ensureSpellsLoaded()
@@ -3702,6 +3720,50 @@ struct ItemDetailViewEnhanced: View {
         }
 
         return descriptions.joined(separator: ", ")
+    }
+    
+    // MARK: - Favorites Functionality
+    
+    private var favoriteButton: some View {
+        Button(action: {
+            Task {
+                await toggleFavorite()
+            }
+        }) {
+            Group {
+                if isFavoriteLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                        .foregroundStyle(isFavorite ? .yellow : .secondary)
+                        .font(.title3)
+                }
+            }
+        }
+        .disabled(isFavoriteLoading)
+    }
+    
+    private func loadFavoriteStatus() async {
+        isFavoriteLoading = true
+        isFavorite = await favoritesManager.isFavorite(item: item)
+        isFavoriteLoading = false
+        
+        logger.info("🔍 Loaded favorite status for item \(item.entry): \(isFavorite)")
+        print("🔍 Favorite status: [\(item.entry)] \(item.name) = \(isFavorite)")
+    }
+    
+    private func toggleFavorite() async {
+        logger.info("⭐ Toggling favorite for item [\(item.entry)] \(item.name)")
+        print("⭐ Toggling favorite: \(item.name)")
+        
+        isFavoriteLoading = true
+        await favoritesManager.toggleFavorite(item: item)
+        isFavorite = await favoritesManager.isFavorite(item: item)
+        isFavoriteLoading = false
+        
+        logger.info("✅ Favorite toggled: [\(item.entry)] \(item.name) now \(isFavorite ? "favorited" : "unfavorited")")
+        print("✅ Favorite status updated: [\(item.entry)] \(item.name) = \(isFavorite)")
     }
 }
 

@@ -967,6 +967,10 @@ extension AboutView {
         let export = buildDiagnostics()
         #if canImport(UIKit)
             UIPasteboard.general.string = export
+            
+            // Provide haptic feedback to confirm action
+            let notificationFeedback = UINotificationFeedbackGenerator()
+            notificationFeedback.notificationOccurred(.success)
         #elseif canImport(AppKit)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(export, forType: .string)

@@ -102,9 +102,137 @@ import os.log
                 return items
             }
         }
+        
+        /// Add an item to favorites
+    func addFavorite(itemId: Int64) async throws {
+        logger.info("⭐ Adding item \(itemId) to favorites")
+        print("⭐ Adding favorite: \(itemId)")
+        
+        try await dbQueue.write { db in
+            try db.execute(
+                sql: "INSERT OR REPLACE INTO favorites (item_id) VALUES (?)",
+                arguments: [itemId]
+            )
+        }
+        
+        logger.info("✅ Item \(itemId) added to favorites")
+        print("✅ Favorite added: \(itemId)")
+    }
+    
+    /// Remove an item from favorites
+    func removeFavorite(itemId: Int64) async throws {
+        logger.info("⭐ Removing item \(itemId) from favorites")
+        print("⭐ Removing favorite: \(itemId)")
+        
+        try await dbQueue.write { db in
+            try db.execute(
+                sql: "DELETE FROM favorites WHERE item_id = ?",
+                arguments: [itemId]
+            )
+        }
+        
+        logger.info("✅ Item \(itemId) removed from favorites")
+        print("✅ Favorite removed: \(itemId)")
+    }
+        
+    /// Check if an item is favorited
+    func isFavorite(itemId: Int64) async throws -> Bool {
+        logger.info("🔍 Checking if item \(itemId) is favorited")
+        print("🔍 Checking favorite status: \(itemId)")
+        
+        return try await dbQueue.read { db in
+            let count = try Int.fetchOne(
+                db,
+                sql: "SELECT COUNT(*) FROM favorites WHERE item_id = ?",
+                arguments: [itemId]
+            ) ?? 0
+            let isFav = count > 0
+            self.logger.info("📊 Item \(itemId) favorite status: \(isFav)")
+            print("📊 Item \(itemId) is favorite: \(isFav)")
+            return isFav
+        }
+    }
+    
+    /// Fetch all favorited items
+    func fetchFavorites() async throws -> [Item] {
+        logger.info("⭐ Fetching all favorite items")
+        print("⭐ Loading all favorites")
+        
+        return try await dbQueue.read { db in
+            let sql = """
+                SELECT i.* FROM items i
+                JOIN favorites f ON i.entry = f.item_id
+                ORDER BY f.created_at DESC
+                """
+            
+            let items = try Item.fetchAll(db, sql: sql)
+            self.logger.info("📊 Fetched \(items.count) favorite items")
+            print("📊 Loaded \(items.count) favorites")
+            return items
+        }
+    }
+        
+        /// Add an item to recent items (with automatic cleanup)
+        func addToRecent(itemId: Int64) async throws {
+            logger.info("🕒 Adding item \(itemId) to recent items")
+            print("🕒 Adding to recent: \(itemId)")
+            
+        try await dbQueue.write { db in
+            // Insert or update the recent item
+            try db.execute(
+                sql: "INSERT OR REPLACE INTO recent_items (item_id, accessed_at) VALUES (?, CURRENT_TIMESTAMP)",
+                arguments: [itemId]
+            )
+            
+            // Keep only the most recent 50 items
+            try db.execute(sql: """
+                DELETE FROM recent_items WHERE item_id NOT IN (
+                    SELECT item_id FROM recent_items 
+                    ORDER BY accessed_at DESC 
+                    LIMIT 50
+                )
+            """)
+        }
+        
+        logger.info("✅ Item \(itemId) added to recent items")
+        print("✅ Added to recent: \(itemId)")
+    }
+        
+        /// Fetch recent items
+        func fetchRecentItems() async throws -> [Item] {
+            logger.info("🕒 Fetching recent items")
+            print("🕒 Loading recent items")
+            
+            return try await dbQueue.read { db in
+                let sql = """
+                    SELECT i.* FROM items i
+                    JOIN recent_items r ON i.entry = r.item_id
+                    ORDER BY r.accessed_at DESC
+                    LIMIT 50
+                    """
+                
+                let items = try Item.fetchAll(db, sql: sql)
+                self.logger.info("📊 Fetched \(items.count) recent items")
+                print("📊 Loaded \(items.count) recent items")
+                return items
+            }
+        }
+        
+        /// Clear all recent items
+        func clearRecentItems() async throws {
+            logger.info("🗑️ Clearing all recent items")
+            print("🗑️ Clearing all recent items")
+            
+            try await dbQueue.write { db in
+                try db.execute(sql: "DELETE FROM recent_items")
+            }
+            
+            logger.info("✅ All recent items cleared")
+            print("✅ All recent items cleared")
+        }
 
         /// Enrich items with spell rows if they have spell effect references.
-        func enrichWithSpells(items: [Item]) -> [Item] {
+        func enrichWithSpells(items: [Item]) async -> [Item] {
             logger.info("🪄 enrichWithSpells() called with \(items.count) items")
             print("🪄 Enriching \(items.count) items with spell data...")
 
@@ -131,7 +259,7 @@ import os.log
                     print("🔮 Item has \(spellIds.count) spell IDs: \(spellIds)")
 
                     do {
-                        let spells: [Spell] = try dbQueue.read({ db in
+                        let spells: [Spell] = try await dbQueue.read({ db in
                             print("🗄️ Querying spells table for IDs: \(spellIds)")
                             let spells = try Spell.filter(spellIds.contains(Column("id"))).fetchAll(
                                 db)
@@ -176,6 +304,7 @@ import os.log
 
             return enriched
         }
+
     }
 
 #else
@@ -188,6 +317,13 @@ import os.log
     actor ItemRepository {
         init(dbQueue: Any? = nil) {}
         func search(rawQuery: String, limit: Int = 50) throws -> [Item] { return [] }
-        func enrichWithSpells(items: [Item]) -> [Item] { items }
+        func enrichWithSpells(items: [Item]) async -> [Item] { items }
+        func addFavorite(itemId: Int64) async throws {}
+        func removeFavorite(itemId: Int64) async throws {}
+        func isFavorite(itemId: Int64) async throws -> Bool { false }
+        func fetchFavorites() async throws -> [Item] { [] }
+        func addToRecent(itemId: Int64) async throws {}
+        func fetchRecentItems() async throws -> [Item] { [] }
+        func clearRecentItems() async throws {}
     }
 #endif

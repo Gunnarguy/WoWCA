@@ -84,38 +84,43 @@ final class DatabaseService {
             throw error
         }
 
-        // Always remove any existing cached database and copy fresh from bundle
-        if fm.fileExists(atPath: targetURL.path) {
-            logger.info("🗑️ Removing existing database file")
-            print("🗑️ Removing existing database file...")
-            try fm.removeItem(at: targetURL)
-            logger.info("✅ Existing database file removed")
-            print("✅ Existing database removed")
+        // Only copy database if it doesn't exist (preserve user data)
+        if !fm.fileExists(atPath: targetURL.path) {
+            logger.info("� First launch: Copying database from bundle to Application Support...")
+            print("� First launch: Copying fresh database from bundle...")
+            try fm.copyItem(at: bundled, to: targetURL)
+            logger.info("✅ Database copied successfully")
+            print("📂 Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
+        } else {
+            logger.info("� Using existing database with user data")
+            print("� Using existing database (preserving user data)")
         }
 
-        logger.info("📋 Copying database from bundle to Application Support...")
-        print("📋 Copying fresh database from bundle...")
-        try fm.copyItem(at: bundled, to: targetURL)
-        logger.info("✅ Database copied successfully")
-        print("📂 Copied fresh bundled \(dbFileName) -> \(targetURL.path)")
+        // Verify database file size
+        let finalSize = (try? FileManager.default.attributesOfItem(atPath: targetURL.path))?[.size] as? Int64 ?? 0
+        logger.info("📏 Final database size: \(finalSize) bytes")
+        print("� Final DB size: \(finalSize) bytes")
 
         self.dbFileURL = targetURL
 
         logger.info("⚙️ Configuring GRDB database queue...")
         print("⚙️ Setting up GRDB configuration...")
         var config = Configuration()
-        config.readonly = true
+        // Don't set readonly=true since we need to support favorites/recents tables
         config.prepareDatabase { db in
             print("🔧 GRDB prepareDatabase callback executing...")
             try db.execute(sql: "PRAGMA journal_mode = DELETE")
             print("✅ PRAGMA journal_mode = DELETE executed")
         }
 
-        logger.info("🔌 Opening database connection...")
-        print("🔌 Opening database connection...")
+        logger.info("🔌 Opening database connection with read/write access...")
+        print("🔌 Opening database connection with read/write access...")
         dbQueue = try DatabaseQueue(path: targetURL.path, configuration: config)
         logger.info("✅ Database queue created successfully")
         print("✅ Database connection established")
+
+        // Setup database migrations for user data tables
+        try setupMigrations()
 
         // Verify the database has correct data
         logger.info("🔍 Verifying database contents...")
@@ -133,10 +138,49 @@ final class DatabaseService {
 
         logger.info("📊 Database verification complete: \(itemCount) items, \(ftsCount) FTS entries")
         print("🗃️ Database loaded: \(itemCount) items, \(ftsCount) FTS entries")
-        print("[DB] Opened database (readonly) at: \(targetURL.path)")
+        print("[DB] Opened database (read/write with user data support) at: \(targetURL.path)")
 
         isConfigured = true
         logger.info("🏁 Database configuration completed successfully")
         print("🏁 Database configuration complete!")
+    }
+
+    /// Setup database migrations for user data tables
+    private func setupMigrations() throws {
+        var migrator = DatabaseMigrator()
+        
+        // v1.0 -> v1.1: Add favorites table
+        migrator.registerMigration("create_favorites") { [self] db in
+            self.logger.info("🔄 Creating favorites table...")
+            print("🔄 Running migration: create_favorites")
+            try db.execute(sql: """
+                CREATE TABLE IF NOT EXISTS favorites (
+                    item_id INTEGER PRIMARY KEY,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            self.logger.info("✅ Favorites table created")
+            print("✅ Favorites table ready")
+        }
+        
+        // v1.1 -> v1.2: Add recent items table  
+        migrator.registerMigration("create_recent_items") { [self] db in
+            self.logger.info("🔄 Creating recent items table...")
+            print("🔄 Running migration: create_recent_items")
+            try db.execute(sql: """
+                CREATE TABLE IF NOT EXISTS recent_items (
+                    item_id INTEGER PRIMARY KEY,
+                    accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            self.logger.info("✅ Recent items table created")
+            print("✅ Recent items table ready")
+        }
+        
+        logger.info("🚀 Running database migrations...")
+        print("🚀 Running database migrations...")
+        try migrator.migrate(dbQueue)
+        logger.info("✅ All migrations completed successfully")
+        print("✅ All migrations completed")
     }
 }

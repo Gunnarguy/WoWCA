@@ -3,9 +3,12 @@
 
 import SwiftUI
 import os.log
+import GRDB
 
 struct RootView: View {
     @Bindable var vm: ItemSearchViewModel
+    @Bindable var favoritesManager: FavoritesManager
+    @Bindable var recentsManager: RecentsManager
 
     // Logger for navigation events
     private let logger = Logger(subsystem: "com.wowca.app", category: "Navigation")
@@ -14,11 +17,29 @@ struct RootView: View {
         TabView {
             SearchView(vm: vm)
                 .tabItem {
-                    Label("Items", systemImage: "magnifyingglass")
+                    Label("Search", systemImage: "magnifyingglass")
                 }
                 .onAppear {
-                    logger.info("🔍 Items tab appeared")
-                    print("🔍 Items tab selected")
+                    logger.info("🔍 Search tab appeared")
+                    print("🔍 Search tab selected")
+                }
+
+            FavoritesView(favoritesManager: favoritesManager)
+                .tabItem {
+                    Label("Favorites", systemImage: "star")
+                }
+                .onAppear {
+                    logger.info("⭐ Favorites tab appeared")
+                    print("⭐ Favorites tab selected")
+                }
+
+            RecentsView(recentsManager: recentsManager)
+                .tabItem {
+                    Label("Recent", systemImage: "clock")
+                }
+                .onAppear {
+                    logger.info("🕒 Recent tab appeared")
+                    print("🕒 Recent tab selected")
                 }
 
             AboutView()
@@ -30,6 +51,8 @@ struct RootView: View {
                     print("ℹ️ About tab selected")
                 }
         }
+        .environment(favoritesManager)
+        .environment(recentsManager)
         .onAppear {
             logger.info("📱 RootView TabView appeared")
             print("📱 Main tab interface loaded")
@@ -44,7 +67,17 @@ struct RootView: View {
 #if DEBUG
     struct RootView_Previews: PreviewProvider {
         static var previews: some View {
-            Text("Preview").tabItem { Label("Items", systemImage: "magnifyingglass") }
+            // Create mock objects for preview
+            let mockRepository = ItemRepository(dbQueue: try! DatabaseQueue())
+            let mockVM = ItemSearchViewModel(repository: mockRepository)
+            let mockFavorites = FavoritesManager(repository: mockRepository)
+            let mockRecents = RecentsManager(repository: mockRepository)
+            
+            RootView(
+                vm: mockVM,
+                favoritesManager: mockFavorites,
+                recentsManager: mockRecents
+            )
         }
     }
 #endif

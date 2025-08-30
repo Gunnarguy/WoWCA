@@ -24,6 +24,12 @@
 		C1A6465A0000000000000011 /* ItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000010 /* ItemRepository.swift */; };
 		C1A6465A0000000000000013 /* ItemRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000012 /* ItemRowView.swift */; };
 		C1A6465A0000000000000015 /* ItemSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000014 /* ItemSearchViewModel.swift */; };
+		C1A6465A0000000000000017 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000018 /* FavoritesManager.swift */; };
+		C1A6465A0000000000000019 /* RecentsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000020 /* RecentsManager.swift */; };
+		C1A6465A0000000000000021 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000022 /* FavoritesView.swift */; };
+		C1A6465A0000000000000023 /* RecentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000024 /* RecentsView.swift */; };
+		C1A6465A0000000000000025 /* DatabaseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000026 /* DatabaseErrorView.swift */; };
+		C1A6465A0000000000000027 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6465A0000000000000028 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +51,12 @@
 		C1A6465A0000000000000012 /* ItemRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRowView.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000014 /* ItemSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSearchViewModel.swift; sourceTree = "<group>"; };
 		C1A6465A0000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C1A6465A0000000000000018 /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000020 /* RecentsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentsManager.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000022 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000024 /* RecentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentsView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000026 /* DatabaseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseErrorView.swift; sourceTree = "<group>"; };
+		C1A6465A0000000000000028 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,12 +77,18 @@
 				C1A6465A0000000000000000 /* AboutView.swift */,
 				C1A6465A0000000000000002 /* AppLogger.swift */,
 				C1A6465A0000000000000004 /* DatabaseService.swift */,
+				C1A6465A0000000000000026 /* DatabaseErrorView.swift */,
+				C1A6465A0000000000000018 /* FavoritesManager.swift */,
+				C1A6465A0000000000000022 /* FavoritesView.swift */,
 				C1A6465A0000000000000006 /* Item.swift */,
 				072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */,
 				C1A6465A0000000000000010 /* ItemRepository.swift */,
 				C1A6465A0000000000000012 /* ItemRowView.swift */,
 				C1A6465A0000000000000014 /* ItemSearchViewModel.swift */,
 				072F281D2E7B5421006E2616 /* LicensesView.swift */,
+				C1A6465A0000000000000028 /* OnboardingView.swift */,
+				C1A6465A0000000000000020 /* RecentsManager.swift */,
+				C1A6465A0000000000000024 /* RecentsView.swift */,
 				072F281F2E7B5421006E2616 /* RootView.swift */,
 				072F28212E7B5421006E2616 /* SearchView.swift */,
 				072F28232E7B5421006E2616 /* Spell.swift */,
@@ -179,12 +197,18 @@
 				C1A6465A0000000000000001 /* AboutView.swift in Sources */,
 				C1A6465A0000000000000003 /* AppLogger.swift in Sources */,
 				C1A6465A0000000000000005 /* DatabaseService.swift in Sources */,
+				C1A6465A0000000000000025 /* DatabaseErrorView.swift in Sources */,
+				C1A6465A0000000000000017 /* FavoritesManager.swift in Sources */,
+				C1A6465A0000000000000021 /* FavoritesView.swift in Sources */,
 				C1A6465A0000000000000007 /* Item.swift in Sources */,
 				072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */,
 				C1A6465A0000000000000011 /* ItemRepository.swift in Sources */,
 				C1A6465A0000000000000013 /* ItemRowView.swift in Sources */,
 				C1A6465A0000000000000015 /* ItemSearchViewModel.swift in Sources */,
 				072F281E2E7B5421006E2616 /* LicensesView.swift in Sources */,
+				C1A6465A0000000000000027 /* OnboardingView.swift in Sources */,
+				C1A6465A0000000000000019 /* RecentsManager.swift in Sources */,
+				C1A6465A0000000000000023 /* RecentsView.swift in Sources */,
 				072F28202E7B5421006E2616 /* RootView.swift in Sources */,
 				072F28222E7B5421006E2616 /* SearchView.swift in Sources */,
 				072F28242E7B5421006E2616 /* Spell.swift in Sources */,

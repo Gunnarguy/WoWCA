@@ -11,6 +11,9 @@ import os.log
 @main
 struct WoWCAApp: App {
     @State private var vm: ItemSearchViewModel?
+    @State private var favoritesManager: FavoritesManager?
+    @State private var recentsManager: RecentsManager?
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     // Logger for app lifecycle events
     private let logger = Logger(subsystem: "com.wowca.app", category: "AppLifecycle")
@@ -44,6 +47,14 @@ struct WoWCAApp: App {
             _vm = State(initialValue: ItemSearchViewModel(repository: repo))
             logger.info("✅ ItemSearchViewModel initialized successfully")
 
+            logger.info("⭐ Initializing FavoritesManager...")
+            _favoritesManager = State(initialValue: FavoritesManager(repository: repo))
+            logger.info("✅ FavoritesManager initialized successfully")
+
+            logger.info("🕒 Initializing RecentsManager...")
+            _recentsManager = State(initialValue: RecentsManager(repository: repo))
+            logger.info("✅ RecentsManager initialized successfully")
+
         } catch {
             logger.error("❌ App initialization failed: \(error.localizedDescription)")
             print("❌ DB init failed: \(error)")
@@ -55,23 +66,30 @@ struct WoWCAApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if let vm {
-                RootView(vm: vm)
-                    .onAppear {
-                        logger.info("🖼️ Presenting main UI with view model")
-                        logger.info("🎬 Main UI appeared")
-                        print("🖼️ Presenting main UI with view model")
-                        print("🎬 RootView appeared - app is ready for user interaction")
-                        print("🔧 App lifecycle: FOREGROUND_ACTIVE")
-                    }
-                    .onDisappear {
-                        logger.info("👋 Main UI disappeared")
-                        print("👋 RootView disappeared")
-                        print("🔧 App lifecycle: BACKGROUND")
-                    }
+            if let vm, let favoritesManager, let recentsManager {
+                RootView(
+                    vm: vm,
+                    favoritesManager: favoritesManager,
+                    recentsManager: recentsManager
+                )
+                .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
+                    OnboardingView()
+                        .interactiveDismissDisabled()
+                }
+                .onAppear {
+                    logger.info("🖼️ Presenting main UI with view model")
+                    logger.info("🎬 Main UI appeared")
+                    print("🖼️ Presenting main UI with view model")
+                    print("🎬 RootView appeared - app is ready for user interaction")
+                    print("🔧 App lifecycle: FOREGROUND_ACTIVE")
+                }
+                .onDisappear {
+                    logger.info("👋 Main UI disappeared")
+                    print("👋 RootView disappeared")
+                    print("🔧 App lifecycle: BACKGROUND")
+                }
             } else {
-                Text("Database failed to load")
-                    .padding()
+                DatabaseErrorView()
                     .onAppear {
                         logger.error("❌ Showing error state - no view model available")
                         print("❌ Error view appeared - database failed to load")
