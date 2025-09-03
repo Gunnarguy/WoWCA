@@ -23,26 +23,23 @@ struct AppLogger {
 
     // MARK: - Convenience Methods
 
-    /// Log and print an info message
+    /// Log an info message
     static func info(_ message: String, category: LogCategory = .app) {
         let logger = logger(for: category)
         logger.info("\(message)")
-        print("ℹ️ \(message)")
     }
 
-    /// Log and print an error message
+    /// Log an error message
     static func error(_ message: String, category: LogCategory = .app) {
         let logger = logger(for: category)
         logger.error("\(message)")
-        print("❌ \(message)")
     }
 
-    /// Log and print a debug message (only in DEBUG builds)
+    /// Log a debug message (only in DEBUG builds)
     static func debug(_ message: String, category: LogCategory = .app) {
         #if DEBUG
             let logger = logger(for: category)
             logger.debug("\(message)")
-            print("🐛 \(message)")
         #endif
     }
 
@@ -55,7 +52,6 @@ struct AppLogger {
         let message = "🔵 ENTER \(function) [\(fileName):\(line)]"
         let logger = logger(for: category)
         logger.info("\(message)")
-        print(message)
     }
 
     /// Log detailed function exit
@@ -67,7 +63,6 @@ struct AppLogger {
         let message = "🔴 EXIT \(function) [\(fileName):\(line)]"
         let logger = logger(for: category)
         logger.info("\(message)")
-        print(message)
     }
 
     /// Log performance timing
@@ -76,7 +71,6 @@ struct AppLogger {
         let fullMessage = "⏱️ \(message): \(formattedDuration)s"
         let logger = logger(for: category)
         logger.info("\(fullMessage)")
-        print(fullMessage)
     }
 
     /// Log user interaction events
@@ -84,7 +78,6 @@ struct AppLogger {
         let message = "👆 USER: \(action)"
         let logger = logger(for: category)
         logger.info("\(message)")
-        print(message)
     }
 
     /// Log data/state changes
@@ -92,7 +85,6 @@ struct AppLogger {
         let message = "🔄 STATE: \(description)"
         let logger = logger(for: category)
         logger.info("\(message)")
-        print(message)
     }
 
     /// Log API/Database operations
@@ -100,7 +92,6 @@ struct AppLogger {
         let message = "🔧 OP: \(description)"
         let logger = logger(for: category)
         logger.info("\(message)")
-        print(message)
     }
 
     // MARK: - Private Helpers

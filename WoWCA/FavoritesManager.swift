@@ -18,13 +18,11 @@ final class FavoritesManager {
     init(repository: ItemRepository) {
         self.repository = repository
         logger.info("⭐ FavoritesManager initialized")
-        print("⭐ FavoritesManager created")
     }
     
     /// Toggle favorite status for an item
     func toggleFavorite(item: Item) async {
         logger.info("🔄 Toggling favorite for item \(item.entry): \(item.name)")
-        print("🔄 Toggling favorite: [\(item.entry)] \(item.name)")
         
         do {
             let isFav = try await repository.isFavorite(itemId: item.entry)
@@ -32,7 +30,6 @@ final class FavoritesManager {
             if isFav {
                 try await repository.removeFavorite(itemId: item.entry)
                 logger.info("➖ Removed item \(item.entry) from favorites")
-                print("➖ Removed from favorites: \(item.name)")
                 
                 // Provide haptic feedback on iOS
                 #if os(iOS)
@@ -42,7 +39,6 @@ final class FavoritesManager {
             } else {
                 try await repository.addFavorite(itemId: item.entry)
                 logger.info("➕ Added item \(item.entry) to favorites")
-                print("➕ Added to favorites: \(item.name)")
                 
                 // Provide haptic feedback on iOS
                 #if os(iOS)
@@ -56,14 +52,12 @@ final class FavoritesManager {
             
         } catch {
             logger.error("❌ Failed to toggle favorite for item \(item.entry): \(error.localizedDescription)")
-            print("❌ Error toggling favorite: \(error)")
         }
     }
     
     /// Add item to favorites
     func addFavorite(item: Item) async {
         logger.info("➕ Adding item to favorites: [\(item.entry)] \(item.name)")
-        print("➕ Adding favorite: \(item.name)")
         
         do {
             try await repository.addFavorite(itemId: item.entry)
@@ -76,17 +70,14 @@ final class FavoritesManager {
             #endif
             
             logger.info("✅ Successfully added favorite")
-            print("✅ Favorite added successfully")
         } catch {
             logger.error("❌ Failed to add favorite: \(error.localizedDescription)")
-            print("❌ Error adding favorite: \(error)")
         }
     }
     
     /// Remove item from favorites
     func removeFavorite(item: Item) async {
         logger.info("➖ Removing item from favorites: [\(item.entry)] \(item.name)")
-        print("➖ Removing favorite: \(item.name)")
         
         do {
             try await repository.removeFavorite(itemId: item.entry)
@@ -99,10 +90,8 @@ final class FavoritesManager {
             #endif
             
             logger.info("✅ Successfully removed favorite")
-            print("✅ Favorite removed successfully")
         } catch {
             logger.error("❌ Failed to remove favorite: \(error.localizedDescription)")
-            print("❌ Error removing favorite: \(error)")
         }
     }
     
@@ -114,7 +103,6 @@ final class FavoritesManager {
             return result
         } catch {
             logger.error("❌ Failed to check favorite status: \(error.localizedDescription)")
-            print("❌ Error checking favorite status: \(error)")
             return false
         }
     }
@@ -122,7 +110,6 @@ final class FavoritesManager {
     /// Load all favorite items
     func loadFavorites() async {
         logger.info("📦 Loading all favorite items")
-        print("📦 Loading favorites...")
         
         isLoading = true
         
@@ -131,10 +118,8 @@ final class FavoritesManager {
             favoriteItems = items
             
             logger.info("✅ Loaded \(items.count) favorite items")
-            print("✅ Loaded \(items.count) favorites")
         } catch {
             logger.error("❌ Failed to load favorites: \(error.localizedDescription)")
-            print("❌ Error loading favorites: \(error)")
             favoriteItems = []
         }
         

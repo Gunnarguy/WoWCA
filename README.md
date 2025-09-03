@@ -1,10 +1,10 @@
-# WoWCA: World of Warcraft Classic Assistant
+# Classic Era Assistant
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Gunnarguy/WoWCA/main/WoWCA/Assets.xcassets/AppIcon.appiconset/icon-mac-256@2x.png" width="128" alt="WoWCA Icon">
 </p>
 
-**WoWCA** is a comprehensive, offline-first item and spell database for World of Warcraft Classic, meticulously crafted for iOS, iPadOS, and visionOS. It provides instant access to a vast repository of in-game items and spells without requiring an internet connection, ensuring data is always available, private, and fast.
+**Classic Era Assistant** is a comprehensive, offline-first item and spell database for the Classic Era of a certain popular MMORPG, meticulously crafted for iOS, iPadOS, and visionOS. It provides instant access to a vast repository of in-game items and spells without requiring an internet connection, ensuring data is always available, private, and fast.
 
 The project includes a modern SwiftUI client and a fully reproducible data build pipeline that generates the app's core SQLite database.
 
@@ -214,7 +214,7 @@ This application is designed with user privacy as a core principle.
 
 ### Disclaimer
 
-This project is an independent, fan-made reference tool and is not affiliated with, endorsed by, or sponsored by Blizzard Entertainment, Inc. "World of Warcraft" and all related names, logos, and trademarks are the property of Blizzard Entertainment, Inc.
+This project is an independent, fan-made reference tool and is not affiliated with, endorsed by, or sponsored by Blizzard Entertainment, Inc. "World of Warcraft" and all related names, logos, and trademarks are the property of Blizzard Entertainment, Inc. The use of the trademark is for identification purposes only.
 
 This app uses only numerical and textual data derived from publicly accessible community-driven sources. No proprietary artwork, copyrighted assets, or private server data is included or distributed.
 

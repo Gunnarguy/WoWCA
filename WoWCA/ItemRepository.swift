@@ -736,9 +736,6 @@ import os.log
             logger.info(
                 "🏁 Enrichment complete: \(enriched.count) items, \(totalSpellsLoaded) total spells loaded"
             )
-            print(
-                "🏁 Enrichment complete: \(enriched.count) items, \(totalSpellsLoaded) spells loaded"
-            )
 
             return enriched
         }

@@ -18,7 +18,7 @@ struct DatabaseErrorView: View {
                 Text("Could not load the app's database.")
                     .font(.body)
                 
-                Text("This contains all the World of Warcraft Classic item data needed for the app to function.")
+                Text("This contains all the Classic Era item data needed for the app to function.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

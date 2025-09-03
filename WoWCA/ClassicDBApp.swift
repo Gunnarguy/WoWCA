@@ -1,6 +1,6 @@
 //
-//  WoWCAApp.swift
-//  WoWCA
+//  ClassicDBApp.swift
+//  ClassicDB
 //
 //  Created by Gunnar Hostetler on 8/13/25.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import os.log
 
 @main
-struct WoWCAApp: App {
+struct ClassicDBApp: App {
     @State private var vm: ItemSearchViewModel?
     @State private var favoritesManager: FavoritesManager?
     @State private var recentsManager: RecentsManager?
@@ -19,7 +19,7 @@ struct WoWCAApp: App {
     private let logger = Logger(subsystem: "com.wowca.app", category: "AppLifecycle")
 
     init() {
-        logger.info("🚀 WoWCAApp initializing...")
+        logger.info("🚀 ClassicDBApp initializing...")
 
         // Enable detailed Core Data logging if needed
         #if DEBUG

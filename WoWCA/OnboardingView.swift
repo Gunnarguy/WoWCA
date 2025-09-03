@@ -20,43 +20,46 @@ struct OnboardingView: View {
             TabView {
                 // Page 1: Search Feature
                 OnboardingPage(
-                    title: "Powerful Search",
-                    subtitle: "Find any World of Warcraft Classic item quickly and easily",
+                    title: "Discover & Search",
+                    subtitle: "Find any Classic Era item with powerful search capabilities",
                     systemImage: "magnifyingglass.circle.fill",
                     color: .blue,
                     features: [
-                        "� Search by item name (e.g., \"Sulfuras\")",
-                        "🔢 Direct lookup by item ID (e.g., \"19019\")",
-                        "⚡ Instant results with full-text search",
-                        "📊 Complete item stats and details"
+                        "🔍 Search by name, stats, or effects",
+                        "🔢 Direct item ID lookup (e.g., \"19019\")",
+                        "⚡ Instant results with advanced filtering",
+                        "📊 Complete item details and spell effects",
+                        "🎯 Find items by \"chance on hit\" or spell effects"
                     ]
                 )
                 
                 // Page 2: Favorites Feature
                 OnboardingPage(
-                    title: "Save Your Favorites",
-                    subtitle: "Build your personal collection of important items",
+                    title: "Personal Collection",
+                    subtitle: "Save and organize your most important items",
                     systemImage: "star.circle.fill",
                     color: .orange,
                     features: [
-                        "⭐ Bookmark items for quick access",
-                        "📝 Build gear wishlists and shopping lists",
-                        "� All favorites saved locally on your device",
-                        "� Sync across app launches"
+                        "⭐ Bookmark items for quick reference",
+                        "📝 Create gear wishlists and upgrade paths",
+                        "🔒 All data stored securely on your device",
+                        "💫 Never lose track of must-have items",
+                        "📱 Access favorites instantly from any screen"
                     ]
                 )
                 
                 // Page 3: Recent History Feature
                 OnboardingPage(
-                    title: "Recent History",
-                    subtitle: "Keep track of items you've viewed recently",
+                    title: "Smart History",
+                    subtitle: "Effortlessly track and revisit your browsing history",
                     systemImage: "clock.circle.fill",
                     color: .green,
                     features: [
-                        "🕒 Automatic history of viewed items",
-                        "� Pick up where you left off",
-                        "🗑️ Clear history when needed",
-                        "⚡ Quick access to recent searches"
+                        "🕒 Automatic tracking of viewed items",
+                        "🔄 Resume where you left off seamlessly",
+                        "🗑️ Privacy-focused with manual clear option",
+                        "⚡ One-tap access to recent discoveries",
+                        "📈 See your exploration patterns over time"
                     ],
                     isLast: true
                 ) {

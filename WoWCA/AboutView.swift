@@ -93,7 +93,7 @@ struct AboutView: View {
                                 statLine(label: "Source Commit", value: commit)
                             }
                             Text(
-                                "No Blizzard art or proprietary assets included; only structured item + spell fields."
+                                "No proprietary art or assets included; only structured item + spell fields."
                             )
                         }
                     }
@@ -102,295 +102,18 @@ struct AboutView: View {
                             Text(
                                 "Deterministic script (`items_build.sh`) produces the SQLite + FTS5 database. Re-run locally to reproduce this build bit‑for‑bit (same input snapshot → same output hash)."
                             )
-                            DisclosureGroup("Reproduce Locally") {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    CodeBlock(lines: [
-                                        "./items_build.sh",
-                                        "sqlite3 build/items.sqlite 'select count(*) from items;'",
-                                        "sqlite3 build/items.sqlite \"select entry,name from items_fts where items_fts match 'sulfuras*' limit 5;\"",
-                                    ])
-                                    CodeBlock(lines: [
-                                        "# Expected artifacts:",
-                                        "build/items.sqlite  # working copy",
-                                        "Resources/items.sqlite  # bundled copy",
-                                        "item_changes_report.csv (optional diff)",
-                                    ])
-                                }.padding(.top, 4)
+                            if let commit = versionRowCommitShort {
+                                statLine(label: "Source Commit", value: commit)
                             }
-                            DisclosureGroup("Data Version Row") {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    if versionRow.isEmpty {
-                                        Text("Not available (row missing)").font(.footnote)
-                                    } else {
-                                        ForEach(versionRow.keys.sorted(), id: \.self) { k in
-                                            HStack {
-                                                Text(friendlyVersionKey(k)).font(
-                                                    .caption.monospaced())
-                                                Spacer()
-                                                Text(versionRow[k] ?? "").font(.caption)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.top, 4)
-                            }
-                            if let url = URL(
-                                string:
-                                    "https://github.com/Gunnarguy/WoWCA/blob/main/TRANSPARENCY.md")
-                            {
-                                Link("Full Transparency Document", destination: url)
-                                    .font(.footnote.weight(.semibold))
+                            if let hash = dbHashShort {
+                                statLine(label: "DB Hash", value: hash)
                             }
                         }
                     }
-                    InfoCard(title: "Core Stats", systemImage: "gauge.with.dots.needle.50percent") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            statLine(label: "Items", value: itemCount.map(String.init) ?? "…")
-                            statLine(
-                                label: ftsMismatch ? "FTS Rows ⚠️" : "FTS Rows",
-                                value: ftsCount.map(String.init) ?? "…")
-                            if itemCount != nil, let withSpell = itemsWithSpellCount,
-                                let pct = itemsWithSpellPercent
-                            {
-                                statLine(
-                                    label: "Items w/ Spell",
-                                    value: "\(withSpell) (" + String(format: "%.1f%%", pct) + ")")
-                            }
-                            if let size = dbFileSizeBytes {
-                                statLine(label: "DB Size", value: byteString(size))
-                            }
-                            if let h = dbHashShort { statLine(label: "DB Hash", value: h) }
-                            if let ratio = dbCompressionEstimate {
-                                statLine(
-                                    label: "Vacuum Gain", value: String(format: "~%.2fx", ratio))
-                            }
-                            if spellCount != nil {
-                                DisclosureGroup("Spell Linking") {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        statLine(
-                                            label: "Spells",
-                                            value: spellCount.map(String.init) ?? "…")
-                                        statLine(
-                                            label: "Spell Refs",
-                                            value: linkedSpellRefs.map(String.init) ?? "…")
-                                        statLine(
-                                            label: "Distinct Spell Refs",
-                                            value: distinctSpellRefs.map(String.init) ?? "…")
-                                        if let refs = linkedSpellRefs,
-                                            let withSpell = itemsWithSpellCount, withSpell > 0
-                                        {
-                                            let avg = Double(refs) / Double(withSpell)
-                                            statLine(
-                                                label: "Avg Refs/Item",
-                                                value: String(format: "%.2f", avg))
-                                        }
-                                    }
-                                    .padding(.top, 4)
-                                }
-                            }
-                            if ftsMismatch {
-                                Text("FTS row count differs from items; rebuild advised.").font(
-                                    .caption2
-                                ).foregroundStyle(.orange)
-                            }
-                            if dbCompressionEstimate != nil {
-                                Text(
-                                    "Vacuum Gain is an approximate space saving if the DB were compacted (freelist removed)."
-                                ).font(.caption2).foregroundStyle(.secondary)
-                            }
-                            if let err = statsError {
-                                Text(err).font(.caption).foregroundStyle(.red)
-                            }
-                            DisclosureGroup("Query Examples") {
-                                CodeBlock(lines: [
-                                    "SELECT COUNT(*) FROM items;",
-                                    "SELECT * FROM data_version;",
-                                    "SELECT COUNT(*) FROM spells;",
-                                    "SELECT COUNT(*) FROM items WHERE spellid_1 IS NOT NULL OR spellid_2 IS NOT NULL OR spellid_3 IS NOT NULL OR spellid_4 IS NOT NULL OR spellid_5 IS NOT NULL;",
-                                    "SELECT (COUNT(spellid_1)+COUNT(spellid_2)+COUNT(spellid_3)+COUNT(spellid_4)+COUNT(spellid_5)) FROM items;",
-                                    "SELECT COUNT(DISTINCT s) FROM (SELECT spellid_1 AS s FROM items WHERE spellid_1 IS NOT NULL UNION ALL SELECT spellid_2 FROM items WHERE spellid_2 IS NOT NULL UNION ALL SELECT spellid_3 FROM items WHERE spellid_3 IS NOT NULL UNION ALL SELECT spellid_4 FROM items WHERE spellid_4 IS NOT NULL UNION ALL SELECT spellid_5 FROM items WHERE spellid_5 IS NOT NULL);",
-                                    "SELECT entry,name FROM items_fts WHERE items_fts MATCH 'sulfuras*' LIMIT 5;",
-                                ])
-                                .padding(.top, 4)
-                            }
-                        }
-                    }
-                    InfoCard(
-                        title: "Database Deep Stats", systemImage: "chart.bar.doc.horizontal.fill"
-                    ) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            if !deepStatsLoaded {
-                                ProgressView().task { await loadDeepStats() }
-                            }
-                            if let err = deepStatsError {
-                                Text(err).font(.caption).foregroundStyle(.red)
-                            }
-                            if deepStatsLoaded {
-                                if let range = itemLevelRange {
-                                    statLine(label: "Item Level Min", value: String(range.min))
-                                    statLine(label: "Item Level Max", value: String(range.max))
-                                    statLine(
-                                        label: "Item Level Avg",
-                                        value: String(format: "%.1f", range.avg))
-                                    if let med = medianItemLevel {
-                                        statLine(label: "Item Level Median", value: String(med))
-                                    }
-                                }
-                                DisclosureGroup("Table Row Counts") {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        ForEach(tableCounts, id: \.0) { t in
-                                            HStack {
-                                                Text(t.0).font(.caption.monospaced())
-                                                Spacer()
-                                                Text("\(t.1)").font(.caption)
-                                            }
-                                        }
-                                    }.padding(.top, 4)
-                                }
-                                DisclosureGroup("Item Qualities") {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        ForEach(qualityCounts, id: \.0) { q in
-                                            HStack {
-                                                Text(qualityName(for: q.0))
-                                                    .font(.caption)
-                                                    .foregroundStyle(qualityColor(for: q.0))
-                                                Text("(\(q.0))")
-                                                    .font(.caption.monospaced())
-                                                    .foregroundStyle(.secondary)
-                                                Spacer()
-                                                Text("\(q.1)").font(.caption)
-                                            }
-                                        }
-                                    }.padding(.top, 4)
-                                    Text(
-                                        "Counts by item quality enumeration (0=Poor, 1=Common, 2=Uncommon, 3=Rare, 4=Epic, 5=Legendary)."
-                                    )
-                                    .font(.caption2).foregroundStyle(.secondary)
-                                }
-                                DisclosureGroup("Patch Distribution") {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        ForEach(patchCounts, id: \.0) { p in
-                                            HStack {
-                                                Text(patchVersionName(for: p.0))
-                                                    .font(.caption.monospaced())
-                                                Spacer()
-                                                Text("\(p.1)").font(.caption)
-                                            }
-                                        }
-                                    }.padding(.top, 4)
-                                    Text("Counts of items by the patch they were introduced in.")
-                                        .font(.caption2).foregroundStyle(.secondary)
-                                }
-                                if !topSpellRefs.isEmpty {
-                                    DisclosureGroup("Top Spell References") {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            ForEach(topSpellRefs, id: \.0) { s in
-                                                HStack {
-                                                    Text("SpellID \(s.0)").font(
-                                                        .caption.monospaced())
-                                                    Spacer()
-                                                    Text("\(s.1)x").font(.caption)
-                                                }
-                                            }
-                                        }.padding(.top, 4)
-                                        Text(
-                                            "Most frequently referenced spell IDs across all item spell slots."
-                                        ).font(.caption2).foregroundStyle(.secondary)
-                                    }
-                                }
-                                DisclosureGroup("Deep Query Examples") {
-                                    CodeBlock(lines: [
-                                        // Each line kept short for small device widths
-                                        "SELECT quality,COUNT(*) FROM items GROUP BY quality;",
-                                        "SELECT patch,COUNT(*) FROM items WHERE patch IS NOT NULL GROUP BY patch;",
-                                        "SELECT MIN(item_level),MAX(item_level),AVG(item_level) FROM items WHERE item_level IS NOT NULL;",
-                                        "WITH refs AS (... union spellid_1..5) SELECT s,COUNT(*) c FROM refs GROUP BY s ORDER BY c DESC LIMIT 5;",
-                                    ])
-                                    .padding(.top, 4)
-                                }
-                            }
-                        }
-                    }
-                    InfoCard(title: "Privacy", systemImage: "lock.shield.fill") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(
-                                "No data leaves the device. The app has: • no analytics • no network fetches • no tracking identifiers. All queries execute locally in a read‑only SQLite file."
-                            )
-                            Text(
-                                "Permissions: none required. No camera, contacts, location, or network entitlement is used."
-                            ).font(.caption2).foregroundStyle(.secondary)
-                            if let url = URL(string: privacyURL) {
-                                Link("Web Privacy Policy", destination: url)
-                            }
-                        }
-                    }
-                    InfoCard(title: "Support & Source", systemImage: "hammer.fill") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            if let issues = URL(string: "https://github.com/Gunnarguy/WoWCA/issues")
-                            {
-                                Link("Report an Issue", destination: issues)
-                            }
-                            if let repo = URL(string: "https://github.com/Gunnarguy/WoWCA") {
-                                Link("Source Code (GitHub)", destination: repo)
-                            }
-                            if let licenseURL = URL(
-                                string: "https://github.com/Gunnarguy/WoWCA/blob/main/LICENSE")
-                            {
-                                Link("Project License (MIT)", destination: licenseURL)
-                            }
-                            NavigationLink("In‑App Licenses") { LicensesView() }
-                            Button(action: { copyStatsToClipboard() }) {
-                                Label("Copy Diagnostics", systemImage: "doc.on.doc")
-                            }
-                            .buttonStyle(.bordered)
-                            .font(.caption)
-                            #if os(iOS)
-                                Button(action: { prepareAndShareDiagnostics() }) {
-                                    Label("Share Diagnostics", systemImage: "square.and.arrow.up")
-                                }
-                                .buttonStyle(.bordered)
-                                .font(.caption)
-                            #endif
-                            Text("Include diagnostics in new issues to speed up triage.").font(
-                                .caption2
-                            ).foregroundStyle(.secondary)
-                        }
-                    }
-                    InfoCard(title: "Search Tips", systemImage: "magnifyingglass") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Prefix match: type early letters (e.g. 'sulfu') for Sulfuras.")
-                            Text("Wildcard: add * for stem expansion (e.g. 'gladiat*').")
-                            Text("Exact ID: enter an item ID number (e.g. 19019).")
-                            Text(
-                                "Spell text: search effect phrases like 'chance on hit' or 'use:' to surface procs."
-                            ).font(.caption2).foregroundStyle(.secondary)
-                        }
-                    }
-                    InfoCard(title: "Acknowledgements", systemImage: "hands.clap.fill") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let url = URL(string: "https://github.com/groue/GRDB.swift") {
-                                Link("GRDB.swift – MIT License", destination: url)
-                            }
-                            Text("Apple Swift / SwiftUI frameworks")
-                            Text("Community Classic data curators")
-                            Text("Open-source contributors & testers")
-                        }.font(.footnote)
-                    }
-                    InfoCard(
-                        title: "Disclaimer", systemImage: "exclamationmark.triangle.fill",
-                        tint: .orange
-                    ) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(
-                                "World of Warcraft ©2004 Blizzard Entertainment, Inc. All rights reserved. World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This is an unofficial fan-made application and is not affiliated with or endorsed by Blizzard Entertainment."
-                            )
-                        }
-                        .font(.footnote)
-                    }
+                    legalDisclaimerSection
                 }
-                footer
+                .padding(.horizontal)
             }
-            .padding(.horizontal, 20)
             .padding(.vertical, 24)
         }
         .background(
@@ -406,7 +129,7 @@ struct AboutView: View {
         .task { await loadStats() }
         #if os(iOS)
             .sheet(isPresented: $showShareSheet) {
-                ShareSheet(text: diagnosticsText)
+                ShareSheet(activityItems: [diagnosticsText])
             }
         #endif
     }
@@ -456,7 +179,28 @@ struct AboutView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.bottom, 8)
+    }
+
+    private var legalDisclaimerSection: some View {
+        InfoCard(title: "Legal Disclaimer", systemImage: "gavel.fill") {
+            Text(
+                "World of Warcraft ©2004 Blizzard Entertainment, Inc. All rights reserved. World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This is an unofficial fan-made application and is not affiliated with or endorsed by Blizzard Entertainment."
+            )
+            .font(.caption)
+            .foregroundColor(.secondary)
+        }
+    }
+
+    private func statLine(label: String, value: String) -> some View {
+        HStack {
+            Text(label).font(.caption.monospaced())
+            Spacer()
+            Text(value).font(.caption)
+        }
+        .accessibilityElement()
+        .accessibilityLabel(Text(label.replacingOccurrences(of: "w/", with: "with")))
+        .accessibilityValue(Text(value))
     }
 
     private var footer: some View {
@@ -903,18 +647,6 @@ extension AboutView {
         .accessibilityLabel("App Icon")
     }
 
-    @ViewBuilder
-    fileprivate func statLine(label: String, value: String) -> some View {
-        HStack {
-            Text(label).font(.caption.monospaced())
-            Spacer()
-            Text(value).font(.caption)
-        }
-        .accessibilityElement()
-        .accessibilityLabel(Text(label.replacingOccurrences(of: "w/", with: "with")))
-        .accessibilityValue(Text(value))
-    }
-
     fileprivate var noiseOverlay: some View {
         Canvas(rendersAsynchronously: true) { ctx, size in
             let noiseDensity = 420
@@ -1008,9 +740,9 @@ extension AboutView {
     extension AboutView {
         // iOS Share Sheet
         struct ShareSheet: UIViewControllerRepresentable {
-            let text: String
+            let activityItems: [Any]
             func makeUIViewController(context: Context) -> UIActivityViewController {
-                UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
             }
             func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
         }

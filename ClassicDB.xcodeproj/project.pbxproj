@@ -11,7 +11,7 @@
 		072F28202E7B5421006E2616 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F281F2E7B5421006E2616 /* RootView.swift */; };
 		072F28222E7B5421006E2616 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28212E7B5421006E2616 /* SearchView.swift */; };
 		072F28242E7B5421006E2616 /* Spell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28232E7B5421006E2616 /* Spell.swift */; };
-		072F28262E7B5421006E2616 /* WoWCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28252E7B5421006E2616 /* WoWCAApp.swift */; };
+		072F28262E7B5421006E2616 /* ClassicDBApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F28252E7B5421006E2616 /* ClassicDBApp.swift */; };
 		072F28282E7B5421006E2616 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 072F28272E7B5421006E2616 /* Assets.xcassets */; };
 		072F282C2E7B5421006E2616 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */; };
 		072F282E2E7B5421006E2616 /* ItemDetailViewEnhanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */; };
@@ -37,7 +37,7 @@
 		072F281F2E7B5421006E2616 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		072F28212E7B5421006E2616 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		072F28232E7B5421006E2616 /* Spell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spell.swift; sourceTree = "<group>"; };
-		072F28252E7B5421006E2616 /* WoWCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WoWCAApp.swift; sourceTree = "<group>"; };
+		072F28252E7B5421006E2616 /* ClassicDBApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassicDBApp.swift; sourceTree = "<group>"; };
 		072F28272E7B5421006E2616 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		072F282D2E7B5421006E2616 /* ItemDetailViewEnhanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewEnhanced.swift; sourceTree = "<group>"; };
@@ -92,7 +92,7 @@
 				072F281F2E7B5421006E2616 /* RootView.swift */,
 				072F28212E7B5421006E2616 /* SearchView.swift */,
 				072F28232E7B5421006E2616 /* Spell.swift */,
-				072F28252E7B5421006E2616 /* WoWCAApp.swift */,
+				072F28252E7B5421006E2616 /* ClassicDBApp.swift */,
 				072F28272E7B5421006E2616 /* Assets.xcassets */,
 				072F282B2E7B5421006E2616 /* PrivacyInfo.xcprivacy */,
 				C1A6465A0000000000000016 /* Info.plist */,
@@ -212,7 +212,7 @@
 				072F28202E7B5421006E2616 /* RootView.swift in Sources */,
 				072F28222E7B5421006E2616 /* SearchView.swift in Sources */,
 				072F28242E7B5421006E2616 /* Spell.swift in Sources */,
-				072F28262E7B5421006E2616 /* WoWCAApp.swift in Sources */,
+				072F28262E7B5421006E2616 /* ClassicDBApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,7 +345,7 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WoWCA/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "WoW Classic DB";
+				INFOPLIST_KEY_CFBundleDisplayName = "Classic Database";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -369,7 +369,7 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WoWCA/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "WoW Classic DB";
+				INFOPLIST_KEY_CFBundleDisplayName = "Classic Database";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2025 Gunndamental. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
