@@ -58,19 +58,12 @@ The project includes a SwiftUI client and its bundled SQLite database, `WoWCA/it
 
 ### Data Pipeline
 
-The data pipeline consists of a series of scripts that transform raw, publicly available Classic WoW data into a clean, normalized, and optimized SQLite database. This database is then bundled directly into the app.
+The app ships a prebuilt SQLite database, `WoWCA/items.sqlite`. The scripts that built it were removed in 15639f0. It includes:
 
-The process is orchestrated by `items_build.sh`:
-
-1.  **Acquire Data**: Starts with a vendored SQL dump from a public Classic WoW database project.
-2.  **Parse & Normalize**: A Python script processes the raw data, cleaning up inconsistencies, normalizing field names, and selecting only the columns needed by the app.
-3.  **Resolve Conflicts**: Handles duplicate item entries by intelligently selecting the most accurate version, typically based on the latest patch in which the item appeared.
-4.  **Build Database**: Creates the final `items.sqlite` file, including:
-    - `items` table: Contains all structured item data.
-    - `spell_template_ultimate_nerd`: spell data linked from items.
-    - `items_fts`: An FTS5 virtual table for high-speed text search.
-    - `data_version`: patch version, build date, source and item count.
-5.  **Package**: The final database is copied into the Xcode project's `Resources` directory to be included in the app bundle.
+- `items` table: Contains all structured item data.
+- `spell_template_ultimate_nerd`: spell data linked from items.
+- `items_fts`: An FTS5 virtual table for high-speed text search.
+- `data_version`: patch version, build date, source and item count.
 
 ### iOS Application
 
@@ -195,7 +188,6 @@ This app uses only numerical and textual data derived from publicly accessible c
 | Component       | Purpose                     | License     |
 | --------------- | --------------------------- | ----------- |
 | GRDB.swift      | SQLite wrapper / FTS access | MIT         |
-| Python (stdlib) | Data pipeline scripting     | PSF License |
 
 The WoWCA project source code is licensed under the MIT License. See `LICENSE` for details.
 
