@@ -4,9 +4,9 @@
   <img src="https://raw.githubusercontent.com/Gunnarguy/WoWCA/main/WoWCA/Assets.xcassets/AppIcon.appiconset/icon-mac-256@2x.png" width="128" alt="WoWCA Icon">
 </p>
 
-**Classic Era Assistant** is a comprehensive, offline-first item and spell database for the Classic Era of a certain popular MMORPG, meticulously crafted for iOS, iPadOS, and visionOS. It provides instant access to a vast repository of in-game items and spells without requiring an internet connection, ensuring data is always available, private, and fast.
+**Classic Era Assistant** is a comprehensive, offline-first item and spell database for the Classic Era of a certain popular MMORPG, meticulously crafted for iPhone (iOS 17.0 or later). It provides instant access to a vast repository of in-game items and spells without requiring an internet connection, ensuring data is always available, private, and fast.
 
-The project includes a modern SwiftUI client and a fully reproducible data build pipeline that generates the app's core SQLite database.
+The project includes a SwiftUI client and its bundled SQLite database, `WoWCA/items.sqlite`.
 
 ---
 
@@ -33,7 +33,7 @@ The project includes a modern SwiftUI client and a fully reproducible data build
 ## Features
 
 - **100% Offline Access**: All item and spell data is stored locally. No network connection required.
-- **Multi-Platform**: Designed for iOS, with full support for iPadOS and visionOS multitasking and layouts.
+- **Platform**: Crafted for iPhone (iOS 17.0 or later).
 - **Comprehensive Item Details**: View stats, damage, speed, armor, resistances, durability, level requirements, and class/race restrictions.
 - **Detailed Spell Information**: Complete spell effects with proper variable substitution, proc chances, and comprehensive numerical data in the enhanced spells tab.
 - **Classic WoW Accuracy**: Content properly filtered for Classic WoW 1.15.7 - no expansion classes or races shown.
@@ -49,7 +49,7 @@ The project includes a modern SwiftUI client and a fully reproducible data build
   - **Quality Search**: Find items by rarity like "epic", "rare", "uncommon"
   - **Equipment Type Search**: Search by item type like "staff", "dagger", "trinket"
 - **Privacy-Focused**: No analytics, no trackers, no ads, and no data ever leaves your device.
-- **Reproducible & Transparent Build**: The entire database is built using a deterministic script, ensuring full transparency from public data sources to the final app.
+- **Data Provenance**: The database records its source, patch and build date in `data_version`.
 - **Modern Tech Stack**: Built with SwiftUI, the actor model for safe database access, and modern structured concurrency.
 
 ---
@@ -67,9 +67,9 @@ The process is orchestrated by `items_build.sh`:
 3.  **Resolve Conflicts**: Handles duplicate item entries by intelligently selecting the most accurate version, typically based on the latest patch in which the item appeared.
 4.  **Build Database**: Creates the final `items.sqlite` file, including:
     - `items` table: Contains all structured item data.
-    - `spells` table: Contains spell data linked from items.
+    - `spell_template_ultimate_nerd`: spell data linked from items.
     - `items_fts`: An FTS5 virtual table for high-speed text search.
-    - `data_version`: A metadata table that records the source data's commit hash and snapshot date for provenance.
+    - `data_version`: patch version, build date, source and item count.
 5.  **Package**: The final database is copied into the Xcode project's `Resources` directory to be included in the app bundle.
 
 ### iOS Application
@@ -90,21 +90,17 @@ The app is designed with a clean, modern architecture that leverages the latest 
 
 ```
 WoWCA/
-├── WoWCAApp.swift           # App entry point
-├── Data/
-│   ├── Item.swift           # Main data model
-│   ├── Spell.swift          # Spell data model
-│   ├── DatabaseService.swift # Manages the SQLite DB file
-│   └── ItemRepository.swift # Actor for DB queries
-├── ViewModels/
-│   └── ItemSearchViewModel.swift # State management for search
-├── UI/
-│   ├── RootView.swift       # Main navigation view
-│   ├── SearchView.swift     # Search interface
-│   ├── ItemDetailViewEnhanced.swift # Item detail screen
-│   └── AboutView.swift      # About & stats screen
-├── Resources/
-│   └── items.sqlite         # The bundled database
+├── ClassicDBApp.swift       # App entry point
+├── Item.swift               # Main data model
+├── Spell.swift              # Spell data model
+├── DatabaseService.swift    # Manages the SQLite DB file
+├── ItemRepository.swift     # Actor for DB queries
+├── ItemSearchViewModel.swift # State management for search
+├── RootView.swift           # Main navigation view
+├── SearchView.swift         # Search interface
+├── ItemDetailViewEnhanced.swift # Item detail screen
+├── AboutView.swift          # About & stats screen
+├── items.sqlite             # The bundled database
 └── ... (other supporting files)
 ```
 
@@ -125,7 +121,7 @@ cd WoWCA
 
 # 2. Open the project in Xcode
 xed .
-# Or open WoWCA.xcodeproj from Finder
+# Or open ClassicDB.xcodeproj from Finder
 ```
 
 Once the project is open, select the `WoWCA` scheme and choose a target (any iOS Simulator or a connected physical device). Click the "Run" button. The app will build, and the included `items.sqlite` will be automatically copied on first launch.
@@ -134,29 +130,7 @@ Once the project is open, select the `WoWCA` scheme and choose a target (any iOS
 
 ## Rebuilding the Database
 
-To regenerate the `items.sqlite` database from the source data, run the main build script from the project root.
-
-```bash
-./items_build.sh
-```
-
-This script will perform all the steps described in the [Data Pipeline](#data-pipeline) section.
-
-**Expected Outputs**:
-
-- `build/items.sqlite`: The newly generated database.
-- The script will automatically copy this file to `WoWCA/Resources/items.sqlite`, replacing the old version.
-
-**Verification**:
-You can run queries against the new database to ensure it was built correctly.
-
-```bash
-# Count total items
-sqlite3 build/items.sqlite 'select count(*) from items;'
-
-# Perform a sample FTS search
-sqlite3 build/items.sqlite "select entry,name from items_fts where items_fts match 'sulfuras*' limit 5;"
-```
+The build scripts were removed in 15639f0.
 
 ---
 
@@ -177,26 +151,22 @@ The app's search is powered by SQLite's FTS5 extension, offering several ways to
 
 ## App Store Deployment Checklist
 
-1.  **Update Version**: Use the helper script to increment the version and build numbers.
-    ```bash
-    ./bump_version.sh patch   # Or minor / major
-    ```
-2.  **Prepare Assets**:
+1.  **Prepare Assets**:
     - Update screenshots for all required device sizes.
     - Ensure the app icon is finalized.
-3.  **Archive in Xcode**:
+2.  **Archive in Xcode**:
     - Select "Any iOS Device (arm64)" as the target.
     - Go to `Product` -> `Archive`.
-4.  **Validate and Distribute**:
+3.  **Validate and Distribute**:
     - From the Xcode Organizer, select the archive.
     - Click "Validate App" and resolve any issues.
     - Click "Distribute App" to upload to App Store Connect.
-5.  **App Store Connect Metadata**:
+4.  **App Store Connect Metadata**:
     - Fill out the release version details, including "What's New".
     - Confirm keywords, categories, and pricing.
     - Provide the Privacy Policy URL.
     - In the "App Privacy" section, confirm that the app collects no data.
-6.  **Submission**:
+5.  **Submission**:
     - Submit for review. Optionally, release to a limited set of users via TestFlight first.
 
 ---
@@ -233,12 +203,7 @@ The WoWCA project source code is licensed under the MIT License. See `LICENSE` f
 
 ## Future Ideas
 
-- **Database Caching**: Retain the database between launches instead of re-copying, and implement a migration strategy for updates.
 - **Unit Tests**: Add lightweight tests for search edge cases (e.g., numeric vs. text, empty queries, special characters).
-- **User Features**:
-  - **Favorites**: Allow users to save items to a "favorites" list.
-  - **Recently Viewed**: Keep a list of recently viewed items.
-  - (These would require enabling write access and a proper database migration plan).
 - **Data Diffing**: Create tools to compare item stats across different data snapshots or patches.
 
 ---
